@@ -52,9 +52,26 @@ export class UsersService {
     return result;
   }
 
-  async remove(id: string) {
-    await this.findOne(id); // Ensure user exists before trying to delete
-    await this.prisma.user.delete({ where: { id } });
-    return { message: `User with ID "${id}" successfully deleted` };
+    async remove(id: string) {
+
+      await this.findOne(id); // Ensure user exists before trying to delete
+
+      await this.prisma.user.delete({ where: { id } });
+
+      return { message: `User with ID "${id}" successfully deleted` };
+
+    }
+
+  
+
+    // This method is used by the AuthService to validate a user
+
+    async findOneByEmail(email: string) {
+
+      return this.prisma.user.findUnique({ where: { email } });
+
+    }
+
   }
-}
+
+  
