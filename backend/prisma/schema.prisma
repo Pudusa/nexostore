@@ -29,7 +29,7 @@ model Product {
   name        String
   description String
   price       Float
-  imageUrls   String[]
+  imageUrls   String
   
   manager   User   @relation(fields: [managerId], references: [id])
   managerId String
