@@ -1,0 +1,64 @@
+{
+  "placeholderImages": [
+    {
+      "id": "prod-1-img-1",
+      "description": "Front view of a leather wallet",
+      "imageUrl": "https://picsum.photos/seed/1/600/400",
+      "imageHint": "leather wallet"
+    },
+    {
+      "id": "prod-1-img-2",
+      "description": "Inside of a leather wallet",
+      "imageUrl": "https://picsum.photos/seed/2/600/400",
+      "imageHint": "wallet interior"
+    },
+    {
+      "id": "prod-1-img-3",
+      "description": "Leather wallet in use",
+      "imageUrl": "https://picsum.photos/seed/3/600/400",
+      "imageHint": "hand wallet"
+    },
+    {
+      "id": "prod-2-img-1",
+      "description": "A minimalist desk lamp on a desk",
+      "imageUrl": "https://picsum.photos/seed/4/600/400",
+      "imageHint": "desk lamp"
+    },
+    {
+      "id": "prod-3-img-1",
+      "description": "A set of green tea with a teapot",
+      "imageUrl": "https://picsum.photos/seed/5/600/400",
+      "imageHint": "tea set"
+    },
+    {
+      "id": "prod-3-img-2",
+      "description": "Close up of green tea leaves",
+      "imageUrl": "https://picsum.photos/seed/6/600/400",
+      "imageHint": "tea leaves"
+    },
+    {
+      "id": "prod-4-img-1",
+      "description": "A pair of wireless headphones",
+      "imageUrl": "https://picsum.photos/seed/7/600/400",
+      "imageHint": "wireless headphones"
+    },
+    {
+      "id": "prod-5-img-1",
+      "description": "An artisan ceramic mug",
+      "imageUrl": "https://picsum.photos/seed/8/600/400",
+      "imageHint": "ceramic mug"
+    },
+    {
+      "id": "prod-6-img-1",
+      "description": "A smart fitness tracker on a wrist",
+      "imageUrl": "https://picsum.photos/seed/9/600/400",
+      "imageHint": "fitness tracker"
+    },
+    {
+      "id": "prod-6-img-2",
+      "description": "The screen of a smart fitness tracker",
+      "imageUrl": "https://picsum.photos/seed/10/600/400",
+      "imageHint": "tracker screen"
+    }
+  ]
+}
