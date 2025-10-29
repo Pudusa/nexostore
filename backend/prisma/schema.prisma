@@ -30,13 +30,22 @@ model Product {
   name        String
   description String
   price       Float
-  imageUrls   String
-  
+  images      ProductImage[] // Reemplaza imageUrls por una relación a ProductImage
+
   manager   User   @relation(fields: [managerId], references: [id])
   managerId String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+
+  createdAt DateTime @default(now())
 }
 
 enum Role {
