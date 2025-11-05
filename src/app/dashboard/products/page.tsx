@@ -16,8 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getProducts } from "@/lib/api";
 import { getAuthenticatedUser } from "@/lib/auth";
-import { products } from "@/lib/data";
 import { PlusCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -30,7 +30,8 @@ export default async function ManagerProductsPage() {
     redirect("/login");
   }
 
-  const managerProducts = products.filter((p) => p.managerId === user.id);
+  const allProducts = await getProducts();
+  const managerProducts = allProducts.filter((p) => p.managerId === user.id);
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -81,7 +82,11 @@ export default async function ManagerProductsPage() {
                           alt={product.name}
                           className="aspect-square rounded-md object-cover"
                           height="64"
-                          src={product.imageUrls[0]}
+                          src={
+                            product.images && product.images.length > 0
+                              ? product.images[0].url
+                              : "/placeholder.png"
+                          }
                           width="64"
                         />
                       </TableCell>

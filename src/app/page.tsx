@@ -1,7 +1,9 @@
+import { getProducts } from "@/lib/api";
 import ProductCard from "@/components/product-card";
-import { products } from "@/lib/data";
 
-export default function Home() {
+export default async function Home() {
+  const products = await getProducts();
+
   return (
     <div className="container py-8">
       <div className="mb-8 text-center">

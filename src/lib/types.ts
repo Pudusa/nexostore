@@ -14,6 +14,13 @@ export type Product = {
   name: string;
   description: string;
   price: number;
-  imageUrls: string[];
+  images: { url: string }[];
   managerId: string;
+  manager?: {
+    id: string;
+    name: string;
+    phone?: string;
+  };
+  // Keep imageUrls for backward compatibility if needed, but prefer images
+  imageUrls?: string[];
 };

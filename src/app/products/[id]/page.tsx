@@ -5,7 +5,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { products, users } from "@/lib/data";
+import { getProductById } from "@/lib/api";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
@@ -17,14 +17,15 @@ interface ProductPageProps {
   };
 }
 
-export default function ProductPage({ params }: ProductPageProps) {
-  const product = products.find((p) => p.id === params.id);
+export default async function ProductPage({ params }: ProductPageProps) {
+  const product = await getProductById(params.id);
 
   if (!product) {
     notFound();
   }
 
-  const manager = users.find((u) => u.id === product.managerId);
+  // El manager ahora viene incluido en el producto
+  const manager = product.manager;
 
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -37,11 +38,11 @@ export default function ProductPage({ params }: ProductPageProps) {
         <div>
           <Carousel className="w-full">
             <CarouselContent>
-              {product.imageUrls.map((url, index) => (
+              {product.images.map((image, index) => (
                 <CarouselItem key={index}>
                   <div className="aspect-square relative overflow-hidden rounded-lg shadow-lg">
                     <Image
-                      src={url}
+                      src={image.url}
                       alt={`${product.name} image ${index + 1}`}
                       fill
                       className="object-cover"

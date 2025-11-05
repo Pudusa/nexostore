@@ -25,7 +25,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <CardHeader className="p-0">
           <div className="relative aspect-[4/3] w-full overflow-hidden">
             <Image
-              src={product.imageUrls[0]}
+              src={product.images && product.images.length > 0 ? product.images[0].url : '/placeholder.png'}
               alt={product.name}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -37,6 +37,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <CardTitle className="text-lg font-semibold leading-tight">
             {product.name}
           </CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            {product.description}
+          </p>
         </CardContent>
         <CardFooter className="p-4 pt-0">
           <p className="text-lg font-bold text-primary">

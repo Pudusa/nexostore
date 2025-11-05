@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsNumber, IsPositive, IsString, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsPositive,
+  IsString,
+  IsUUID,
+  IsArray,
+  IsOptional,
+} from "class-validator";
 
 export class CreateProductDto {
   @IsString()
@@ -13,10 +21,12 @@ export class CreateProductDto {
   @IsPositive()
   price: number;
 
-  @IsString() // Expecting a JSON string for the array of URLs
-  @IsNotEmpty()
-  imageUrls: string;
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  imageUrls?: string[];
 
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
   managerId: string;
 }

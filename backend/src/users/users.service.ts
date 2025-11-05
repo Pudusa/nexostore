@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma.service';
@@ -9,28 +8,24 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
-
-    const { password, ...result } = await this.prisma.user.create({
-      data: {
-        ...createUserDto,
-        password: hashedPassword,
-      },
+    const createdUser = await this.prisma.user.create({
+      data: createUserDto,
     });
+
+    const { password, ...result } = createdUser;
     return result;
   }
 
   findAll() {
     return this.prisma.user.findMany({
-      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true },
+      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true, phone: true },
     });
   }
 
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true },
+      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true, phone: true },
     });
 
     if (!user) {
@@ -40,11 +35,6 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    if (updateUserDto.password) {
-      const saltRounds = 10;
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, saltRounds);
-    }
-
     const { password, ...result } = await this.prisma.user.update({
       where: { id },
       data: updateUserDto,
@@ -73,5 +63,3 @@ export class UsersService {
     }
 
   }
-
-  

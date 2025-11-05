@@ -105,3 +105,60 @@
 | **A02: Fallos Criptográficos** | **Hashing de Contraseñas**: Usar **bcrypt**. **Gestión de Secretos**: Almacenar secretos (claves API, JWT) como variables de entorno. **NUNCA** confirmarlos en git. **Transporte Seguro**: Forzar **HTTPS** y cabecera **HSTS**. |
 | **A03: Inyección** | **SQLi**: **OBLIGATORIO** usar Prisma ORM. **PROHIBIDO** el uso de métodos de consulta raw inseguros (ej. `$queryRawUnsafe`). **XSS**: **PROHIBIDO** el uso de `dangerouslySetInnerHTML` sin sanitización (ej. DOMPurify). Implementar una **Política de Seguridad de Contenido (CSP)** estricta. |
 | **A05: CSRF** | **Server Actions**: Confiar en la protección CSRF incorporada de Next.js. **Rutas de API personalizadas**: Deben ser protegidas manualmente contra CSRF si no usan Server Actions. |
+
+---
+
+## 8.0 Plan de Pruebas Automatizadas
+
+Este documento describe la estrategia de pruebas para el proyecto NexoStore, siguiendo la metodología de la Pirámide de Pruebas.
+
+### **Fase 1: Pruebas Unitarias**
+
+Prueban componentes individuales en total aislamiento. Son rápidas y precisas.
+
+#### **Backend (NestJS & Jest)**
+
+| Archivo a Probar | Función/Método | Escenario de Prueba | Estado |
+| :--- | :--- | :--- | :--- |
+| `products.service.ts` | `findOne` | Debe devolver un producto si el ID existe (simulando Prisma). | `[✓]` |
+| `products.service.ts` | `findOne` | Debe lanzar `NotFoundException` si el ID no existe (simulando Prisma). | `[✓]` |
+| `products.service.ts` | `create` | Debe llamar a `prisma.product.create` con los datos correctos. | `[✓]` |
+| `users.service.ts` | `findOne` | Debe devolver un usuario si el ID existe (simulando Prisma). | `[✓]` |
+| `users.service.ts` | `findByEmail` | Debe devolver un usuario si el email existe (para la autenticación). | `[✓]` |
+
+#### **Frontend (Next.js & Jest & React Testing Library)**
+
+| Archivo a Probar | Componente/Función | Escenario de Prueba | Estado |
+| :--- | :--- | :--- | :--- |
+| `components/product-card.tsx` | `ProductCard` | Debe renderizar correctamente el nombre, precio y descripción del producto. | `[✓]` |
+| `lib/utils.ts` | `cn` | Debe fusionar correctamente las clases de Tailwind. | `[✓]` |
+| `lib/utils.ts` | `formatPrice` (si existe) | Debe formatear un número a una cadena de texto de moneda (ej. 100 -> "$100.00"). | `[✓]` |
+
+### **Fase 2: Pruebas de Integración**
+
+Prueban la interacción entre varios componentes.
+
+#### **Backend (NestJS & Supertest)**
+
+| Módulos a Probar | Endpoint | Escenario de Prueba | Estado |
+| :--- | :--- | :--- | :--- |
+| `ProductsModule` | `GET /products/:id` | Debe devolver un 200 OK y los datos del producto si existe. | `[✓]` |
+| `ProductsModule` | `GET /products/:id` | Debe devolver un 404 Not Found si el producto no existe. | `[✓]` |
+| `AuthModule` | `POST /auth/login` | Debe devolver un 401 Unauthorized con credenciales incorrectas. | `[✓]` |
+| `AuthModule` | `POST /auth/login` | Debe devolver un token JWT (simulado) con credenciales correctas. | `[✓]` |
+
+#### **Frontend (Next.js & React Testing Library)**
+
+| Componente a Probar | Interacción | Escenario de Prueba | Estado |
+| :--- | :--- | :--- | :--- |
+| `components/auth/login-form.tsx` | Rellenar y enviar | Al enviar, debe llamar a la Server Action `login` con el email y contraseña. | `[✓]` |
+| `components/dashboard/new-product-form.tsx` | Rellenar y enviar | Al enviar, debe llamar a la Server Action `createProduct` con los datos del formulario. | `[✓]` |
+
+### **Fase 3: Pruebas de Extremo a Extremo (E2E)**
+
+Simulan flujos de usuario completos en un navegador real. Usaremos **Playwright**.
+
+| Flujo de Usuario | Pasos de la Prueba | Estado |
+| :--- | :--- | :--- |
+| **Autenticación** | 1. Navegar a `/login`. 2. Rellenar formulario con un usuario válido. 3. Enviar. 4. Verificar redirección al Dashboard (`/`). 5. Verificar que el nombre del usuario aparece en el `UserNav`. 6. Hacer logout. 7. Verificar redirección a `/login`. | `[✓]` |
+| **Creación de Producto** | 1. Iniciar sesión como `manager`. 2. Navegar a `/dashboard/products`. 3. Hacer clic en "Crear Producto". 4. Rellenar el formulario del nuevo producto. 5. Enviar. 6. Verificar que el nuevo producto aparece en la tabla de productos. | `[ ] Pendiente` |

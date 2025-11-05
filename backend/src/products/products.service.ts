@@ -8,15 +8,46 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   create(createProductDto: CreateProductDto) {
-    return this.prisma.product.create({ data: createProductDto });
+    const { imageUrls, ...productData } = createProductDto;
+    return this.prisma.product.create({
+      data: {
+        ...productData,
+        images: {
+          create: (imageUrls || []).map((url) => ({ url })),
+        },
+      },
+    });
   }
 
   findAll() {
-    return this.prisma.product.findMany();
+    return this.prisma.product.findMany({
+      include: {
+        images: true,
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
+    });
   }
 
   async findOne(id: string) {
-    const product = await this.prisma.product.findUnique({ where: { id } });
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: {
+        images: true,
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
+    });
     if (!product) {
       throw new NotFoundException(`Product with ID "${id}" not found`);
     }
@@ -25,9 +56,22 @@ export class ProductsService {
 
   async update(id: string, updateProductDto: UpdateProductDto) {
     await this.findOne(id); // Ensure product exists
+
+    const { imageUrls, ...productData } = updateProductDto;
+
     return this.prisma.product.update({
       where: { id },
-      data: updateProductDto,
+      data: {
+        ...productData,
+        images: {
+          // Delete all existing images and create new ones
+          deleteMany: {},
+          create: (imageUrls || []).map((url) => ({ url })),
+        },
+      },
+      include: {
+        images: true,
+      },
     });
   }
 

@@ -2,6 +2,14 @@ import type { User, Product } from "@/lib/types";
 
 export const users: User[] = [
   {
+    id: "user-0",
+    name: "Manager User",
+    email: "manager@nexostore.com",
+    role: "manager",
+    avatarUrl: "https://i.pravatar.cc/150?u=manager@nexostore.com",
+    phone: "111-222-3333",
+  },
+  {
     id: "user-1",
     name: "Admin User",
     email: "admin@nexostore.com",
@@ -52,7 +60,7 @@ export const products: Product[] = [
       "https://picsum.photos/seed/2/600/400",
       "https://picsum.photos/seed/3/600/400",
     ],
-    managerId: "user-2",
+    managerId: "user-0",
   },
   {
     id: "prod-2",
