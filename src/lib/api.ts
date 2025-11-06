@@ -89,6 +89,17 @@ export const uploadProductImages = async (files: File[]): Promise<string[]> => {
   }
 };
 
+export const getUsers = async (): Promise<any[]> => {
+  const authenticatedApi = getAuthenticatedApi();
+  try {
+    const response = await authenticatedApi.get("/users");
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch users:", error);
+    return [];
+  }
+};
+
 export const updateProduct = async (
   id: string,
   productData: Omit<Product, "id">,

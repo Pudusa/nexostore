@@ -1,5 +1,5 @@
 import { getAuthenticatedUser } from "@/lib/auth";
-import { users } from "@/lib/data";
+import { getUsers } from "@/lib/api";
 import { redirect } from "next/navigation";
 import {
   Table,
@@ -38,6 +38,8 @@ export default async function UsersPage() {
     redirect("/login");
   }
 
+  const users = await getUsers();
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -72,7 +74,7 @@ export default async function UsersPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-10 gap-1">
                   <ListFilter className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                  <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                     Filtrar Rol
                   </span>
                 </Button>
