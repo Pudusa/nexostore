@@ -128,7 +128,7 @@ async function main() {
         email: userData.email,
         password: hashedPassword, // Asignamos la contraseña hasheada aquí
         role: userData.role,
-        phone: userData.phone,
+        phone: userData.phone ?? '000-000-0000',
         avatarUrl: userData.avatarUrl,
       },
     });
