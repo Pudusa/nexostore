@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from '../prisma.service';
+import { AuthenticatedUser } from '../auth/types';
 
 @Injectable()
 export class ProductsService {
@@ -54,8 +59,15 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
-    await this.findOne(id); // Ensure product exists
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    user: AuthenticatedUser,
+  ) {
+    const product = await this.findOne(id); // Ensure product exists
+    if (product.managerId !== user.id) {
+      throw new ForbiddenException('You are not allowed to update this product');
+    }
 
     const { imageUrls, ...productData } = updateProductDto;
 
@@ -75,8 +87,11 @@ export class ProductsService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id); // Ensure product exists
+  async remove(id: string, user: AuthenticatedUser) {
+    const product = await this.findOne(id); // Ensure product exists
+    if (product.managerId !== user.id) {
+      throw new ForbiddenException('You are not allowed to delete this product');
+    }
     await this.prisma.product.delete({ where: { id } });
     return { message: `Product with ID "${id}" successfully deleted` };
   }

@@ -1,7 +1,10 @@
 "use client";
 
+import { deleteProduct } from "@/app/actions/product-actions";
+import { useToast } from "@/hooks/use-toast";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useTransition } from "react";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -17,9 +20,26 @@ interface ProductActionsProps {
 }
 
 export default function ProductActions({ productId }: ProductActionsProps) {
-  // In a real app, the delete action would be a server action
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+
   const handleDelete = () => {
-    alert(`(Mock) Deleting product ${productId}`);
+    startTransition(async () => {
+      const result = await deleteProduct(productId);
+      if (result.success) {
+        toast({
+          title: "Producto Eliminado",
+          description: "El producto ha sido eliminado exitosamente.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description:
+            result.message || "Ocurrió un error al eliminar el producto.",
+          variant: "destructive",
+        });
+      }
+    });
   };
 
   return (
@@ -39,9 +59,13 @@ export default function ProductActions({ productId }: ProductActionsProps) {
             Editar
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+        <DropdownMenuItem
+          onClick={handleDelete}
+          disabled={isPending}
+          className="text-destructive"
+        >
           <Trash2 className="mr-2 h-4 w-4" />
-          Eliminar
+          {isPending ? "Eliminando..." : "Eliminar"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

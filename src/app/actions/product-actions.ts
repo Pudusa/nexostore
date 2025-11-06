@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { productSchema } from "@/lib/schemas";
 import {
   createProduct as createProductApi,
+  deleteProduct as deleteProductApi,
   updateProduct as updateProductApi,
   uploadProductImages,
 } from "@/lib/api";
@@ -134,7 +135,68 @@ export async function updateProduct(
     };
   }
 
-  revalidatePath("/dashboard/products");
-  revalidatePath(`/products/${id}`);
-  redirect("/dashboard/products");
-}
+    revalidatePath("/dashboard/products");
+
+    revalidatePath(`/products/${id}`);
+
+    redirect("/dashboard/products");
+
+  }
+
+  
+
+  export async function deleteProduct(
+
+    productId: string,
+
+  ): Promise<{ message?: string; success: boolean }> {
+
+    const user = await getAuthenticatedUser();
+
+    if (!user) {
+
+      return {
+
+        message: "Error de autenticación. Por favor, inicia sesión de nuevo.",
+
+        success: false,
+
+      };
+
+    }
+
+  
+
+    try {
+
+      await deleteProductApi(productId);
+
+    } catch (error) {
+
+      console.error("API Error:", error);
+
+      return {
+
+        message: "Error al eliminar el producto. Por favor, inténtalo más tarde.",
+
+        success: false,
+
+      };
+
+    }
+
+  
+
+    revalidatePath("/dashboard/products");
+
+    return {
+
+      success: true,
+
+      message: "Producto eliminado exitosamente.",
+
+    };
+
+  }
+
+  
