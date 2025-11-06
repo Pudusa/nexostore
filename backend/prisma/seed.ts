@@ -12,6 +12,7 @@ const usersData = [
     role: Role.admin,
     avatarUrl: 'https://i.pravatar.cc/150?u=admin@nexostore.com',
     phone: '111-222-3333',
+    phoneCountry: 'US',
   },
   {
     id: 'user-2',
@@ -20,6 +21,7 @@ const usersData = [
     role: Role.manager,
     avatarUrl: 'https://i.pravatar.cc/150?u=andrea@example.com',
     phone: '123-456-7890',
+    phoneCountry: 'US',
   },
   {
     id: 'user-3',
@@ -28,6 +30,7 @@ const usersData = [
     role: Role.manager,
     avatarUrl: 'https://i.pravatar.cc/150?u=carlos@example.com',
     phone: '098-765-4321',
+    phoneCountry: 'US',
   },
   {
     id: 'user-4',
@@ -35,6 +38,8 @@ const usersData = [
     email: 'sofia@example.com',
     role: Role.client,
     avatarUrl: 'https://i.pravatar.cc/150?u=sofia@example.com',
+    phone: '000-000-0000',
+    phoneCountry: 'US',
   },
   {
     id: 'user-5',
@@ -42,6 +47,8 @@ const usersData = [
     email: 'david@example.com',
     role: Role.client,
     avatarUrl: 'https://i.pravatar.cc/150?u=david@example.com',
+    phone: '000-000-0000',
+    phoneCountry: 'US',
   },
 ];
 
@@ -129,6 +136,7 @@ async function main() {
         password: hashedPassword, // Asignamos la contraseña hasheada aquí
         role: userData.role,
         phone: userData.phone ?? '000-000-0000',
+        phoneCountry: userData.phoneCountry ?? 'US',
         avatarUrl: userData.avatarUrl,
       },
     });
