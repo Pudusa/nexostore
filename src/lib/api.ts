@@ -1,58 +1,34 @@
 import axios from "axios";
 import { Product } from "./types";
+import { cookies } from "next/headers";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
 
+// Instancia base de Axios para llamadas públicas o del lado del cliente
 export const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Request Interceptor to add the auth token
-api.interceptors.request.use(
-  (config) => {
-    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
-    // En el navegador, obtener el token de localStorage
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("session");
-      console.log("[API Interceptor] Token from localStorage:", token); // <-- LOG DE DEBUG
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    // En el servidor, este interceptor no adjuntará el token,
-    // lo cual es correcto si las llamadas del lado del servidor se manejan de otra manera
-    // o si se pasa el token explícitamente.
-    return config;
-  },
-  (error) => {
-    console.error("[API Request Error]", error);
-    return Promise.reject(error);
-  },
-);
+// Función para crear una instancia autenticada para uso del lado del servidor (Server Actions, RSC)
+const getAuthenticatedApi = () => {
+  const cookieStore = cookies();
+  const token = cookieStore.get("session")?.value;
 
-// Response Interceptor
-api.interceptors.response.use(
-  (response) => {
-    console.log(
-      `[API Response] ${response.status} ${response.config.url}`,
-    );
-    return response;
-  },
-  (error) => {
-    if (error.response) {
-      console.error(
-        `[API Response Error] ${error.response.status} ${error.response.config.url}`,
-        error.response.data,
-      );
-    } else if (error.request) {
-      console.error("[API Response Error] No response received", error.request);
-    } else {
-      console.error("[API Response Error] ", error.message);
-    }
-    return Promise.reject(error);
-  },
-);
+  const authenticatedApi = axios.create({
+    baseURL: API_BASE_URL,
+  });
+
+  if (token) {
+    console.log("[getAuthenticatedApi] Token found in cookies, attaching to header.");
+    authenticatedApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    console.warn("[getAuthenticatedApi] No session token found in cookies.");
+  }
+
+  return authenticatedApi;
+};
+
 
 export const getProducts = async (): Promise<Product[]> => {
   try {
@@ -67,8 +43,9 @@ export const getProducts = async (): Promise<Product[]> => {
 export const createProduct = async (
   productData: Omit<Product, "id">,
 ): Promise<Product> => {
+  const authenticatedApi = getAuthenticatedApi();
   try {
-    const response = await api.post("/products", productData);
+    const response = await authenticatedApi.post("/products", productData);
     return response.data;
   } catch (error) {
     console.error("Failed to create product:", error);
@@ -87,8 +64,9 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 };
 
 export const getUserById = async (id: string): Promise<any | null> => {
+  const authenticatedApi = getAuthenticatedApi();
   try {
-    const response = await api.get(`/users/${id}`);
+    const response = await authenticatedApi.get(`/users/${id}`);
     return response.data;
   } catch (error) {
     console.error(`Failed to fetch user with id ${id}:`, error);
@@ -97,6 +75,7 @@ export const getUserById = async (id: string): Promise<any | null> => {
 };
 
 export const uploadProductImages = async (files: File[]): Promise<string[]> => {
+  const authenticatedApi = getAuthenticatedApi();
   const formData = new FormData();
   for (const file of files) {
     // Convertir File a Blob para compatibilidad en el servidor
@@ -105,7 +84,7 @@ export const uploadProductImages = async (files: File[]): Promise<string[]> => {
   }
 
   try {
-    const response = await api.post("/upload/images", formData, {
+    const response = await authenticatedApi.post("/upload/images", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -118,8 +97,9 @@ export const uploadProductImages = async (files: File[]): Promise<string[]> => {
 };
 
 export const getUsers = async (): Promise<any[]> => {
+  const authenticatedApi = getAuthenticatedApi();
   try {
-    const response = await api.get("/users");
+    const response = await authenticatedApi.get("/users");
     return response.data;
   } catch (error) {
     console.error("Failed to fetch users:", error);
@@ -135,9 +115,11 @@ export const updateProduct = async (
 
 ): Promise<Product> => {
 
+  const authenticatedApi = getAuthenticatedApi();
+
   try {
 
-    const response = await api.put(`/products/${id}`, productData);
+    const response = await authenticatedApi.put(`/products/${id}`, productData);
 
     return response.data;
 
@@ -154,17 +136,11 @@ export const updateProduct = async (
 
 
 export const deleteProduct = async (id: string): Promise<void> => {
-
+  const authenticatedApi = getAuthenticatedApi();
   try {
-
-    await api.delete(`/products/${id}`);
-
+    await authenticatedApi.delete(`/products/${id}`);
   } catch (error) {
-
     console.error(`Failed to delete product with id ${id}:`, error);
-
     throw error;
-
   }
-
 };
