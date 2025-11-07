@@ -14,7 +14,8 @@ export const api = axios.create({
 const getAuthenticatedApi = () => {
   const cookieStore = cookies();
   console.log('[getAuthenticatedApi] All available cookies:', cookieStore.getAll());
-  const token = cookieStore.get("nexostore-session")?.value;
+  const tokenCookie = cookieStore.getAll().find(cookie => cookie.name === 'nexostore-session');
+  const token = tokenCookie?.value;
 
   const authenticatedApi = axios.create({
     baseURL: API_BASE_URL,
