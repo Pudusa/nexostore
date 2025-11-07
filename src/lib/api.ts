@@ -13,6 +13,7 @@ export const api = axios.create({
 // Función para crear una instancia autenticada para uso del lado del servidor (Server Actions, RSC)
 const getAuthenticatedApi = () => {
   const cookieStore = cookies();
+  console.log('[getAuthenticatedApi] All available cookies:', cookieStore.getAll());
   const token = cookieStore.get("session")?.value;
 
   const authenticatedApi = axios.create({
