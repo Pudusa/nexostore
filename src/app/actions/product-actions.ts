@@ -145,14 +145,11 @@ export async function updateProduct(
 
   
 
-  import { revalidatePath } from 'next/cache';
-import { deleteProduct } from '~/lib/api';
-
-export async function deleteProductAction(productId: string) {
+  export async function deleteProductAction(productId: string) {
   console.log(`[Server Action] Attempting to delete product ${productId}.`);
 
   try {
-    await deleteProduct(productId);
+    await deleteProductApi(productId);
 
     revalidatePath('/dashboard/products');
     return { success: true, message: 'Product deleted successfully' };
