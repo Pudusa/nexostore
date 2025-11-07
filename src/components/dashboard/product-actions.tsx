@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteProduct } from "@/app/actions/product-actions";
+import { deleteProductAction } from "@/app/actions/product-actions";
 import { useToast } from "@/hooks/use-toast";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -25,7 +25,7 @@ export default function ProductActions({ productId }: ProductActionsProps) {
 
   const handleDelete = () => {
     startTransition(async () => {
-      const result = await deleteProduct(productId);
+      const result = await deleteProductAction(productId);
       if (result.success) {
         toast({
           title: "Producto Eliminado",
