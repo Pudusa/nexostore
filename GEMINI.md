@@ -59,14 +59,65 @@
 
 ## 5.0 Arquitectura de Frontend (Next.js)
 
+### 4.3 Estructura de Proyecto Backend
+
+| Directorio / Archivo | Propósito |
+| :--- | :--- |
+| `dist/` | Directorio de salida para el código compilado de JavaScript. |
+| `generated/` | Contiene los tipos de Prisma generados automáticamente. |
+| `node_modules/` | Contiene todas las dependencias del proyecto backend. |
+| `prisma/` | Contiene el esquema de la base de datos, las migraciones y el script de seeding. |
+| `  └─ dev.db` | Base de datos de desarrollo de SQLite. |
+| `  └─ schema.prisma` | Define los modelos de la base de datos y las relaciones. |
+| `  └─ seed.ts` | Script para poblar la base de datos con datos iniciales. |
+| `  └─ migrations/` | Contiene los archivos de migración de la base de datos. |
+| `src/` | Directorio raíz del código fuente de la aplicación NestJS. |
+| `  └─ auth/` | Módulo para la autenticación de usuarios (JWT, guards, strategies). |
+| `  └─ prisma/` | Módulo para la integración con Prisma. |
+| `  └─ products/` | Módulo para la lógica de negocio de los productos (CRUD). |
+| `  └─ supabase/` | Módulo para la integración con Supabase. |
+| `  └─ upload/` | Módulo para la subida de archivos. |
+| `  └─ users/` | Módulo para la lógica de negocio de los usuarios. |
+| `  └─ app.controller.ts` | Controlador principal de la aplicación. |
+| `  └─ app.module.ts` | Módulo raíz de la aplicación NestJS. |
+| `  └─ app.service.ts` | Servicio principal de la aplicación. |
+| `  └─ main.ts` | Punto de entrada de la aplicación NestJS. |
+| `  └─ prisma.service.ts` | Servicio para la conexión con Prisma. |
+| `nest-cli.json` | Archivo de configuración para el CLI de NestJS. |
+| `tsconfig.json` | Archivo de configuración de TypeScript para el backend. |
+
+---
+
+## 5.0 Arquitectura de Frontend (Next.js)
+
 ### 5.1 Estructura de Proyecto
 
-| Directorio | Propósito |
+| Directorio / Archivo | Propósito |
 | :--- | :--- |
 | `src/` | Raíz para todo el código fuente de la aplicación. |
-| `src/app/` | Exclusivamente para la estructura de rutas del App Router. |
-| `src/modules/` | Organizar por características de negocio (ej. `product-catalog`), no por tipo de archivo. |
-| `src/core/` o `src/lib/` | Para lógica, utilidades y tipos verdaderamente globales (cliente API, contextos, etc.). |
+| `  └─ app/` | Estructura de rutas principal siguiendo el App Router de Next.js. |
+| `  │  └─ (auth)/` | Grupo de rutas para autenticación (`login`, `register`). |
+| `  │  └─ dashboard/` | Rutas protegidas para el panel de administración. |
+| `  │  └─ products/` | Rutas públicas para visualizar productos. |
+| `  │  └─ actions/` | Server Actions para mutaciones de datos. |
+| `  │  └─ layout.tsx` | Layout principal de la aplicación. |
+| `  │  └─ page.tsx` | Página de inicio de la aplicación. |
+| `  └─ components/` | Componentes de React reutilizables. |
+| `  │  └─ auth/` | Componentes específicos para la autenticación. |
+| `  │  └─ dashboard/` | Componentes para el panel de administración. |
+| `  │  └─ layout/` | Componentes estructurales (Header, Nav, etc.). |
+| `  │  └─ ui/` | Componentes de UI de bajo nivel (shadcn/ui). |
+| `  └─ hooks/` | Hooks de React personalizados. |
+| `  └─ lib/` | Lógica y utilidades compartidas. |
+| `  │  └─ api.ts` | Funciones para interactuar con el backend. |
+| `  │  └─ auth.ts` | Lógica de autenticación del lado del cliente. |
+| `  │  └─ schemas.ts` | Esquemas de validación con Zod. |
+| `  │  └─ types.ts` | Definiciones de tipos de TypeScript. |
+| `  │  └─ utils.ts` | Funciones de utilidad generales. |
+| `public/` | Archivos estáticos servidos públicamente. |
+| `next.config.mjs` | Archivo de configuración de Next.js. |
+| `tailwind.config.ts` | Archivo de configuración de Tailwind CSS. |
+| `tsconfig.json` | Archivo de configuración de TypeScript para el frontend. |
 
 ### 5.2 Patrones del App Router
 
