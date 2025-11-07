@@ -15,6 +15,7 @@ api.interceptors.request.use(
     // En el navegador, obtener el token de localStorage
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("session");
+      console.log("[API Interceptor] Token from localStorage:", token); // <-- LOG DE DEBUG
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
