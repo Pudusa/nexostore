@@ -10,22 +10,30 @@ export const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Función para crear una instancia autenticada para uso del lado del servidor (Server Actions, RSC)
-const getAuthenticatedApi = () => {
-  const cookieStore = cookies();
-  console.log('[getAuthenticatedApi] All available cookies:', cookieStore.getAll());
-  const tokenCookie = cookieStore.getAll().find(cookie => cookie.name === 'nexostore-session');
-  const token = tokenCookie?.value;
+// Función para crear una instancia autenticada para uso del lado del servidor
+const getAuthenticatedApi = (token?: string) => {
+  if (!token) {
+    const cookieStore = cookies();
+    console.log(
+      "[getAuthenticatedApi] All available cookies:",
+      cookieStore.getAll(),
+    );
+    const tokenCookie = cookieStore.get("nexostore-session");
+    token = tokenCookie?.value;
+  }
 
   const authenticatedApi = axios.create({
     baseURL: API_BASE_URL,
   });
 
   if (token) {
-    console.log("[getAuthenticatedApi] Token found in cookies, attaching to header.");
-    authenticatedApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    console.log(
+      "[getAuthenticatedApi] Token found, attaching to Authorization header.",
+    );
+    authenticatedApi.defaults.headers.common["Authorization"] =
+      `Bearer ${token}`;
   } else {
-    console.warn("[getAuthenticatedApi] No session token found in cookies.");
+    console.warn("[getAuthenticatedApi] No session token found.");
   }
 
   return authenticatedApi;
@@ -137,8 +145,11 @@ export const updateProduct = async (
 
 
 
-export const deleteProduct = async (id: string): Promise<void> => {
-  const authenticatedApi = getAuthenticatedApi();
+export const deleteProduct = async (
+  id: string,
+  token?: string,
+): Promise<void> => {
+  const authenticatedApi = getAuthenticatedApi(token);
   try {
     await authenticatedApi.delete(`/products/${id}`);
   } catch (error) {

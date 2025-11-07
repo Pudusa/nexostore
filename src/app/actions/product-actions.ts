@@ -146,109 +146,32 @@ export async function updateProduct(
   
 
   export async function deleteProductAction(productId: string) {
+  console.log(`[Server Action] Attempting to delete product ${productId}.`);
 
-  
-
-    console.log(`[Server Action] Attempting to delete product ${productId}.`);
-
-  
-
-  
-
-  
-
-    const user = await getAuthenticatedUser();
-
-  
-
-    if (!user) {
-
-  
-
-      return {
-
-  
-
-        success: false,
-
-  
-
-        message: "Error de autenticación. Por favor, inicia sesión de nuevo.",
-
-  
-
-      };
-
-  
-
-    }
-
-  
-
-  
-
-  
-
-    try {
-
-  
-
-      await deleteProductApi(productId);
-
-  
-
-  
-
-  
-
-      revalidatePath("/dashboard/products");
-
-  
-
-      return { success: true, message: "Product deleted successfully" };
-
-  
-
-    } catch (error: any) {
-
-  
-
-      console.error(
-
-  
-
-        "[Server Action Error] Failed to delete product:",
-
-  
-
-        error.response?.data || error.message,
-
-  
-
-      );
-
-  
-
-      return {
-
-  
-
-        success: false,
-
-  
-
-        message: error.response?.data?.message || "Failed to delete product",
-
-  
-
-      };
-
-  
-
-    }
-
-  
-
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return {
+      success: false,
+      message: "Error de autenticación. Por favor, inicia sesión de nuevo.",
+    };
   }
+
+  try {
+    const token = cookies().get("nexostore-session")?.value;
+    await deleteProductApi(productId, token);
+
+    revalidatePath("/dashboard/products");
+    return { success: true, message: "Product deleted successfully" };
+  } catch (error: any) {
+    console.error(
+      "[Server Action Error] Failed to delete product:",
+      error.response?.data || error.message,
+    );
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to delete product",
+    };
+  }
+}
 
   
