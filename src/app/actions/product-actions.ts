@@ -145,58 +145,27 @@ export async function updateProduct(
 
   
 
-  export async function deleteProduct(
+  import { revalidatePath } from 'next/cache';
+import { deleteProduct } from '~/lib/api';
 
-    productId: string,
+export async function deleteProductAction(productId: string) {
+  console.log(`[Server Action] Attempting to delete product ${productId}.`);
 
-  ): Promise<{ message?: string; success: boolean }> {
+  try {
+    await deleteProduct(productId);
 
-    const user = await getAuthenticatedUser();
-
-    if (!user) {
-
-      return {
-
-        message: "Error de autenticación. Por favor, inicia sesión de nuevo.",
-
-        success: false,
-
-      };
-
-    }
-
-  
-
-    try {
-
-      await deleteProductApi(productId);
-
-    } catch (error) {
-
-      console.error("API Error:", error);
-
-      return {
-
-        message: "Error al eliminar el producto. Por favor, inténtalo más tarde.",
-
-        success: false,
-
-      };
-
-    }
-
-  
-
-    revalidatePath("/dashboard/products");
-
+    revalidatePath('/dashboard/products');
+    return { success: true, message: 'Product deleted successfully' };
+  } catch (error: any) {
+    console.error(
+      '[Server Action Error] Failed to delete product:',
+      error.response?.data || error.message,
+    );
     return {
-
-      success: true,
-
-      message: "Producto eliminado exitosamente.",
-
+      success: false,
+      message: error.response?.data?.message || 'Failed to delete product',
     };
-
   }
+}
 
   
