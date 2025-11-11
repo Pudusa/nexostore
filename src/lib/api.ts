@@ -1,159 +1,111 @@
+// src/lib/api.ts
 import axios from "axios";
-import { Product } from "./types";
-import { cookies } from "next/headers";
+import { API_BASE_URL } from "./config";
+import type { Product, User } from "./types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-
-// Instancia base de Axios para llamadas públicas o del lado del cliente
+/**
+ * Instancia de Axios para llamadas a la API pública.
+ * No incluye el token de autenticación.
+ */
 export const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Función para crear una instancia autenticada para uso del lado del servidor
-const getAuthenticatedApi = (token?: string) => {
-  if (!token) {
-    const cookieStore = cookies();
-    console.log(
-      "[getAuthenticatedApi] All available cookies:",
-      cookieStore.getAll(),
-    );
-    const tokenCookie = cookieStore.get("nexostore-session");
-    token = tokenCookie?.value;
-  }
+/**
+ * Función para obtener una instancia de Axios configurada con el token de autenticación.
+ * Esta función se debe usar en el LADO DEL SERVIDOR (Server Actions, Route Handlers)
+ * para realizar llamadas autenticadas a la API del backend.
+ *
+ * @returns Una instancia de Axios con el encabezado de autorización.
+ */
+export const getAuthenticatedApi = async () => {
+  const { cookies } = await import("next/headers");
+  const token = cookies().get("nexostore-session")?.value;
 
   const authenticatedApi = axios.create({
     baseURL: API_BASE_URL,
   });
 
   if (token) {
-    console.log(
-      "[getAuthenticatedApi] Token found, attaching to Authorization header.",
-    );
-    authenticatedApi.defaults.headers.common["Authorization"] =
-      `Bearer ${token}`;
-  } else {
-    console.warn("[getAuthenticatedApi] No session token found.");
+    authenticatedApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   }
 
   return authenticatedApi;
 };
 
+// --- Funciones de Productos ---
 
 export const getProducts = async (): Promise<Product[]> => {
-  try {
-    const response = await api.get("/products");
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch products:", error);
-    return [];
-  }
+  const response = await api.get("/products");
+  return response.data;
+};
+
+export const getProductById = async (id: string): Promise<Product> => {
+  const response = await api.get(`/products/${id}`);
+  return response.data;
 };
 
 export const createProduct = async (
-  productData: Omit<Product, "id">,
+  productData: Omit<Product, "id" | "createdAt" | "updatedAt">,
 ): Promise<Product> => {
-  const authenticatedApi = getAuthenticatedApi();
-  try {
-    const response = await authenticatedApi.post("/products", productData);
-    return response.data;
-  } catch (error) {
-    console.error("Failed to create product:", error);
-    throw error; // Re-throw para que el llamador pueda manejarlo
-  }
-};
-
-export const getProductById = async (id: string): Promise<Product | null> => {
-  try {
-    const response = await api.get(`/products/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Failed to fetch product with id ${id}:`, error);
-    return null;
-  }
-};
-
-export const getUserById = async (id: string): Promise<any | null> => {
-  const authenticatedApi = getAuthenticatedApi();
-  try {
-    const response = await authenticatedApi.get(`/users/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Failed to fetch user with id ${id}:`, error);
-    return null;
-  }
-};
-
-export const uploadProductImages = async (files: File[]): Promise<string[]> => {
-  const authenticatedApi = getAuthenticatedApi();
-  const formData = new FormData();
-  for (const file of files) {
-    // Convertir File a Blob para compatibilidad en el servidor
-    const blob = new Blob([await file.arrayBuffer()], { type: file.type });
-    formData.append("images", blob, file.name);
-  }
-
-  try {
-    const response = await authenticatedApi.post("/upload/images", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data.imageUrls;
-  } catch (error) {
-    console.error("Failed to upload images:", error);
-    throw error;
-  }
-};
-
-export const getUsers = async (): Promise<any[]> => {
-  const authenticatedApi = getAuthenticatedApi();
-  try {
-    const response = await authenticatedApi.get("/users");
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch users:", error);
-    return [];
-  }
+  const authApi = await getAuthenticatedApi();
+  const response = await authApi.post("/products", productData);
+  return response.data;
 };
 
 export const updateProduct = async (
-
   id: string,
-
-  productData: Omit<Product, "id">,
-
+  productData: Partial<Omit<Product, "id" | "createdAt" | "updatedAt">>,
 ): Promise<Product> => {
-
-  const authenticatedApi = getAuthenticatedApi();
-
-  try {
-
-    const response = await authenticatedApi.put(`/products/${id}`, productData);
-
-    return response.data;
-
-  } catch (error) {
-
-    console.error(`Failed to update product with id ${id}:`, error);
-
-    throw error;
-
-  }
-
+  const authApi = await getAuthenticatedApi();
+  const response = await authApi.patch(`/products/${id}`, productData);
+  return response.data;
 };
 
+export const deleteProduct = async (id: string): Promise<void> => {
+  const authApi = await getAuthenticatedApi();
+  await authApi.delete(`/products/${id}`);
+};
 
+export const uploadProductImages = async (
+  files: File[],
+): Promise<{ originalname: string; publicUrl: string }[]> => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("images", file);
+  });
 
-export const deleteProduct = async (
-  id: string,
-  token?: string,
+  const authApi = await getAuthenticatedApi();
+  const response = await authApi.post("/upload/images", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data.uploadedImages;
+};
+
+export const deleteProductImages = async (
+  imageUrls: string[],
 ): Promise<void> => {
-  const authenticatedApi = getAuthenticatedApi(token);
-  try {
-    await authenticatedApi.delete(`/products/${id}`);
-  } catch (error) {
-    console.error(`Failed to delete product with id ${id}:`, error);
-    throw error;
-  }
+  const authApi = await getAuthenticatedApi();
+  await authApi.post("/upload/delete-images", { imageUrls });
+};
+
+export const deleteUser = async (id: string): Promise<void> => {
+  const authApi = await getAuthenticatedApi();
+  await authApi.delete(`/users/${id}`);
+};
+
+export const updateRole = async (id: string, newRole: Role): Promise<User> => {
+  const authApi = await getAuthenticatedApi();
+  const response = await authApi.patch(`/users/${id}/role`, { newRole });
+  return response.data;
+};
+
+// --- Funciones de Usuarios ---
+
+export const getUsers = async (params?: GetUsersDto): Promise<User[]> => {
+  const authApi = await getAuthenticatedApi();
+  const response = await authApi.get("/users", { params });
+  return response.data;
 };

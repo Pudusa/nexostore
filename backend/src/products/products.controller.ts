@@ -1,18 +1,35 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  Patch,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auth/types';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '@prisma/client';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.manager, Role.admin)
+  create(
+    @Body() createProductDto: CreateProductDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.productsService.create(createProductDto, req.user);
   }
 
   @Get()
@@ -25,8 +42,9 @@ export class ProductsController {
     return this.productsService.findOne(id);
   }
 
+  @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  @Put(':id')
+  @Roles(Role.manager, Role.admin)
   update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
@@ -35,8 +53,9 @@ export class ProductsController {
     return this.productsService.update(id, updateProductDto, req.user);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.manager, Role.admin)
   remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.productsService.remove(id, req.user);
   }

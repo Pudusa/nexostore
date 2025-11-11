@@ -8,8 +8,9 @@
   "scripts": {
     "build": "prisma generate && nest build && echo Build output located at: dist",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start": "npm run build && node dist/main",
+    "watch": "nest build --watch",
+    "start:dev": "concurrently \"npm:watch\" \"nodemon\"",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
@@ -18,7 +19,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "devDependencies": {
-    "@nestjs/cli": "^11.0.0",
+    "@nestjs/cli": "^11.0.10",
     "@nestjs/testing": "^11.1.8",
     "@prisma/client": "^5.17.0",
     "@types/express": "^5.0.5",
@@ -27,11 +28,18 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.4",
     "prisma": "^5.17.0",
     "reflect-metadata": "^0.2.2",
-    "supertest": "^7.1.4"
+    "supertest": "^7.1.4",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0"
   },
   "dependencies": {
+    "@nestjs/common": "^11.1.8",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.8",
     "@nestjs/jwt": "^11.0.1",
     "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^11.0.5",

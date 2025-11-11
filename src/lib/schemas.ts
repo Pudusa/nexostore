@@ -4,8 +4,10 @@ import { isValidPhoneNumber } from 'libphonenumber-js';
 export const productSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
-  price: z.coerce.number().positive('El precio debe ser un número positivo.'),
-  imageUrls: z.array(z.string().url()).optional(),
+    price: z.coerce.number().positive('El precio debe ser un número positivo.'),
+    phone: z.string().min(1, 'El teléfono es obligatorio.'),
+    imageUrls: z.array(z.string().url()).optional(),
+    coverImage: z.string().url().nullable().optional(),
   managerId: z.string(),
 });
 
@@ -26,3 +28,10 @@ export const registerSchema = z.object({
 });
 
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+
+export const loginSchema = z.object({
+  email: z.string().email('Por favor, introduce un correo electrónico válido.'),
+  password: z.string().min(1, 'La contraseña es obligatoria.'),
+});
+
+export type LoginFormValues = z.infer<typeof loginSchema>;

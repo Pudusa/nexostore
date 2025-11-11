@@ -6,18 +6,24 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
+import { APP_GUARD, Reflector } from '@nestjs/core';
+import { RolesGuard } from './roles.guard';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
     JwtModule.register({
-      // IMPORTANT: This should be loaded from a config service/env variable
-      secret: 'HARDCODED_SECRET_REPLACE_ME',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '60m' },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    Reflector,
+  ],
 })
 export class AuthModule {}

@@ -1,120 +1,110 @@
 "use server";
 
-import { users } from "@/lib/data";
-import type { Role, User } from "@/lib/types";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { api } from "./api";
-
-const SESSION_COOKIE_NAME = "nexostore-session";
+import { api, getAuthenticatedApi } from "./api";
+import { loginSchema, registerSchema } from "./schemas";
+import type { Role, User } from "./types";
 
 export async function getAuthenticatedUser(): Promise<User | null> {
-  // HACK: In a test environment, we bypass cookie-based auth
-  // and always return the first user (manager).
-  if (process.env.NODE_ENV === "test") {
-    return users[0];
-  }
-
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
-
+  const token = cookies().get("nexostore-session")?.value;
   if (!token) {
     return null;
   }
 
   try {
-    const response = await api.get('/auth/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+    // Use the authenticated API instance to fetch the user profile
+    const authApi = await getAuthenticatedApi();
+    const response = await authApi.get<User>("/auth/profile");
     return response.data;
   } catch (error) {
-    console.error("Failed to fetch authenticated user");
+    // If the token is invalid or expired, the API call will fail.
+    console.error("Authentication error:", error);
     return null;
   }
 }
 
-export async function login(formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+export async function login(
+  prevState: any,
+  formData: FormData,
+): Promise<{ message?: string; success: boolean }> {
+  const data = Object.fromEntries(formData.entries());
+  const validation = loginSchema.safeParse(data);
+
+  if (!validation.success) {
+    return {
+      message: "Datos inválidos. Por favor, revisa tu email y contraseña.",
+      success: false,
+    };
+  }
 
   try {
-    const response = await api.post('/auth/login', { email, password });
+    const response = await api.post<{ access_token: string }>(
+      "/auth/login",
+      validation.data,
+    );
     const { access_token } = response.data;
 
-    if (access_token) {
-      cookies().set(SESSION_COOKIE_NAME, access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24 * 7, // One week
-        path: '/',
-      });
-      redirect('/');
-    } else {
-      return redirect("/login?error=InvalidCredentials");
-    }
+    cookies().set("nexostore-session", access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "strict",
+    });
   } catch (error: any) {
-    if (error.digest?.startsWith('NEXT_REDIRECT')) {
-      throw error;
-    }
-    console.error("Login failed:", error);
-    return redirect("/login?error=ServerError");
+    console.error("Login API Error:", error.response?.data);
+    return {
+      message:
+        error.response?.data?.message ||
+        "Error en el inicio de sesión. Verifica tus credenciales.",
+      success: false,
+    };
   }
+
+  redirect("/");
 }
 
 export async function logout() {
-  const cookieStore = cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+  cookies().delete("nexostore-session");
   redirect("/login");
 }
 
 export async function register(formData: FormData) {
-  const name = formData.get("name") as string;
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const phone = formData.get('phone') as string;
-  const phoneCountry = formData.get('phoneCountry') as string;
+  const data = Object.fromEntries(formData.entries());
+  const validation = registerSchema.safeParse(data);
 
-  if (!name || !email || !password || !phone || !phoneCountry) {
-    return redirect('/register?error=MissingFields');
+  if (!validation.success) {
+    console.error("Validation Error:", validation.error.flatten().fieldErrors);
+    return redirect("/register?error=ValidationError");
   }
 
   try {
-    await api.post('/auth/register', {
-      name,
-      email,
-      password,
-      phone,
-      phoneCountry,
-    });
-
-    const loginFormData = new FormData();
-    loginFormData.append('email', email);
-    loginFormData.append('password', password);
-    
-    return await login(loginFormData);
-
+    // Excluir confirmPassword, ya que no es parte del DTO del backend
+    const { confirmPassword, ...registrationData } = validation.data;
+    await api.post("/auth/register", registrationData);
   } catch (error: any) {
-    if (error.digest?.startsWith('NEXT_REDIRECT')) {
-      throw error;
-    }
-    console.error("Registration failed:", error);
-    if (error.response?.status === 409) {
+    console.error("Registration API Error:", error.response?.data);
+    if (error.response?.data?.message?.includes("already exists")) {
       return redirect("/register?error=UserExists");
     }
-    return redirect("/register?error=ServerError");
+    return redirect("/register?error=RegistrationFailed");
   }
+
+  redirect("/login?success=true");
 }
 
 export async function updateUserRole(userId: string, role: Role) {
-  // In a real app, you'd update this in the database.
-  // This is a mock implementation.
-  const userIndex = users.findIndex(u => u.id === userId);
-  if (userIndex !== -1) {
-    users[userIndex].role = role;
-    console.log(`Updated user ${userId} to role ${role}`);
+  const authApi = await getAuthenticatedApi();
+  try {
+    const response = await authApi.patch(`/users/${userId}/role`, { role });
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error("Failed to update user role:", error.response?.data);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Server Error",
+    };
   }
-  // Revalidate path to see changes
-  redirect('/dashboard/users');
 }
+
+

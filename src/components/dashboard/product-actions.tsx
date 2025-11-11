@@ -15,13 +15,25 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
+import type { Role } from "@/lib/types";
+
 interface ProductActionsProps {
   productId: string;
+  productManagerId: string;
+  currentUserId: string;
+  isSuperAdmin: boolean;
 }
 
-export default function ProductActions({ productId }: ProductActionsProps) {
+export default function ProductActions({
+  productId,
+  productManagerId,
+  currentUserId,
+  isSuperAdmin,
+}: ProductActionsProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+
+  const canManage = currentUserId === productManagerId || isSuperAdmin;
 
   const handleDelete = () => {
     startTransition(async () => {
@@ -41,6 +53,10 @@ export default function ProductActions({ productId }: ProductActionsProps) {
       }
     });
   };
+
+  if (!canManage) {
+    return null;
+  }
 
   return (
     <DropdownMenu>

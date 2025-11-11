@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,18 +14,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login } from "@/lib/auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-
+import { AlertCircle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? "Iniciando Sesión..." : "Iniciar Sesión"}
+    </Button>
+  );
+}
+
 export default function LoginForm() {
+  const initialState = { message: "", success: false };
+  const [state, dispatch] = useFormState(login, initialState);
   const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+  const successMessage = searchParams.get("success");
 
   return (
     <Card className="w-full max-w-sm">
-      <form action={login}>
+      <form action={dispatch}>
         <CardHeader>
           <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
           <CardDescription>
@@ -32,13 +43,22 @@ export default function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error de autenticación</AlertTitle>
+          {successMessage && (
+            <Alert variant="success">
+              <CheckCircle className="h-4 w-4" />
+              <AlertTitle>¡Cuenta Creada!</AlertTitle>
               <AlertDescription>
-                El correo o la contraseña son incorrectos.
+                Tu cuenta ha sido creada exitosamente. Ya puedes iniciar sesión.
               </AlertDescription>
+            </Alert>
+          )}
+          {state?.message && (
+            <Alert variant={state.success ? "default" : "destructive"}>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>
+                {state.success ? "Éxito" : "Error de autenticación"}
+              </AlertTitle>
+              <AlertDescription>{state.message}</AlertDescription>
             </Alert>
           )}
           <div className="grid gap-2">
@@ -57,9 +77,7 @@ export default function LoginForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full">
-            Iniciar Sesión
-          </Button>
+          <SubmitButton />
           <div className="text-center text-sm">
             ¿No tienes una cuenta?{" "}
             <Link href="/register" className="underline">

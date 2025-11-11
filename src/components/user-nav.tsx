@@ -27,11 +27,15 @@ interface UserNavProps {
 }
 
 export default function UserNav({ user }: UserNavProps) {
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string | null) => {
+    if (!name) {
+      return "";
+    }
     return name
       .split(" ")
       .map((n) => n[0])
-      .join("");
+      .join("")
+      .toUpperCase();
   };
 
   return (
@@ -64,7 +68,7 @@ export default function UserNav({ user }: UserNavProps) {
             </Link>
           )}
           {user.role === "admin" && (
-             <Link href="/dashboard/users">
+            <Link href="/dashboard/users">
               <DropdownMenuItem>
                 <Users className="mr-2 h-4 w-4" />
                 <span>Gestión de Usuarios</span>

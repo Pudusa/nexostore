@@ -1,4 +1,4 @@
-import EditProductForm from "@/components/dashboard/edit-product-form";
+import ProductForm from "@/components/dashboard/product-form";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { getProductById } from "@/lib/api";
 import { redirect } from "next/navigation";
@@ -29,7 +29,7 @@ export default async function EditProductPage({
 
   return (
     <div className="container max-w-2xl mx-auto py-8">
-      <EditProductForm manager={user} product={product} />
+      <ProductForm manager={user} product={product} />
     </div>
   );
 }

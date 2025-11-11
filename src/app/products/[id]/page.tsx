@@ -32,13 +32,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
     currency: "USD",
   });
 
+  const sortedImages = [...product.images].sort((a, b) => {
+    if (a.url === product.coverImage) return -1;
+    if (b.url === product.coverImage) return 1;
+    return 0;
+  });
+
   return (
     <div className="container max-w-4xl mx-auto py-8">
       <div className="grid md:grid-cols-2 gap-8">
         <div>
           <Carousel className="w-full">
             <CarouselContent>
-              {product.images.map((image, index) => (
+              {sortedImages.map((image, index) => (
                 <CarouselItem key={index}>
                   <div className="aspect-square relative overflow-hidden rounded-lg shadow-lg">
                     <Image

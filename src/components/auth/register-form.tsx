@@ -63,6 +63,7 @@ export default function RegisterForm() {
     formData.append("password", data.password);
     formData.append("phone", data.phone || "");
     formData.append("phoneCountry", data.phoneCountry);
+    formData.append("confirmPassword", data.confirmPassword);
     register(formData);
   };
 

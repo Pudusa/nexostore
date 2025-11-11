@@ -1,5 +1,16 @@
 export type Role = "admin" | "manager" | "client";
 
+export const ROLES: { [key in Role]: Role } = {
+  admin: 'admin',
+  manager: 'manager',
+  client: 'client',
+};
+
+export type GetUsersDto = {
+  search?: string;
+  role?: Role;
+};
+
 export type User = {
   id: string;
   name: string;

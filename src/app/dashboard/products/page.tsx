@@ -26,12 +26,17 @@ import { redirect } from "next/navigation";
 export default async function ManagerProductsPage() {
   const user = await getAuthenticatedUser();
 
-  if (!user || user.role !== "manager") {
+  if (!user || (user.role !== "manager" && user.role !== "admin")) {
     redirect("/login");
   }
 
+  const isSuperAdmin = user.email === process.env.SUPER_ADMIN_EMAIL;
+
   const allProducts = await getProducts();
-  const managerProducts = allProducts.filter((p) => p.managerId === user.id);
+  const productsToShow =
+    user.role === "admin"
+      ? allProducts
+      : allProducts.filter((p) => p.managerId === user.id);
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -43,17 +48,21 @@ export default async function ManagerProductsPage() {
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle>Mis Productos</CardTitle>
+              <CardTitle>
+                {user.role === "admin" ? "Todos los Productos" : "Mis Productos"}
+              </CardTitle>
               <CardDescription>
-                Gestiona los productos que has publicado en el catálogo.
+                Gestiona los productos del catálogo.
               </CardDescription>
             </div>
-            <Button asChild>
-              <Link href="/dashboard/products/new">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Nuevo Producto
-              </Link>
-            </Button>
+            {user.role === "manager" && (
+              <Button asChild>
+                <Link href="/dashboard/products/new">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Añadir Nuevo Producto
+                </Link>
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -74,8 +83,8 @@ export default async function ManagerProductsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {managerProducts.length > 0 ? (
-                  managerProducts.map((product) => (
+                {productsToShow.length > 0 ? (
+                  productsToShow.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell className="hidden sm:table-cell">
                         <Image
@@ -83,9 +92,9 @@ export default async function ManagerProductsPage() {
                           className="aspect-square rounded-md object-cover"
                           height="64"
                           src={
-                            product.images && product.images.length > 0
+                            product.coverImage || (product.images && product.images.length > 0
                               ? product.images[0].url
-                              : "/placeholder.png"
+                              : "/placeholder.png")
                           }
                           width="64"
                         />
@@ -98,14 +107,19 @@ export default async function ManagerProductsPage() {
                         {formatter.format(product.price)}
                       </TableCell>
                       <TableCell>
-                        <ProductActions productId={product.id} />
+                        <ProductActions
+                          productId={product.id}
+                          productManagerId={product.managerId}
+                          currentUserId={user.id}
+                          isSuperAdmin={isSuperAdmin}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
-                      Aún no has publicado ningún producto.
+                      No se encontraron productos.
                     </TableCell>
                   </TableRow>
                 )}

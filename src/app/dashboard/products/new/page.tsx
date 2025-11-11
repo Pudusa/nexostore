@@ -1,4 +1,4 @@
-import NewProductForm from "@/components/dashboard/new-product-form";
+import ProductForm from "@/components/dashboard/product-form";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -11,7 +11,7 @@ export default async function NewProductPage() {
 
   return (
     <div className="container max-w-2xl mx-auto py-8">
-      <NewProductForm manager={user} />
+      <ProductForm manager={user} />
     </div>
   );
 }

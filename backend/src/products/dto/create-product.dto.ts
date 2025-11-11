@@ -3,10 +3,22 @@ import {
   IsNumber,
   IsPositive,
   IsString,
-  IsUUID,
   IsArray,
   IsOptional,
+  IsBoolean,
+  ValidateNested,
 } from "class-validator";
+import { Type } from "class-transformer";
+
+class ProductImageDto {
+  @IsString()
+  @IsNotEmpty()
+  url: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isCover?: boolean;
+}
 
 export class CreateProductDto {
   @IsString()
@@ -25,6 +37,10 @@ export class CreateProductDto {
   @IsString({ each: true })
   @IsOptional()
   imageUrls?: string[];
+
+  @IsString()
+  @IsOptional()
+  coverImage?: string;
 
   @IsString()
   @IsNotEmpty()

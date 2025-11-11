@@ -213,3 +213,24 @@ Simulan flujos de usuario completos en un navegador real. Usaremos **Playwright*
 | :--- | :--- | :--- |
 | **Autenticación** | 1. Navegar a `/login`. 2. Rellenar formulario con un usuario válido. 3. Enviar. 4. Verificar redirección al Dashboard (`/`). 5. Verificar que el nombre del usuario aparece en el `UserNav`. 6. Hacer logout. 7. Verificar redirección a `/login`. | `[✓]` |
 | **Creación de Producto** | 1. Iniciar sesión como `manager`. 2. Navegar a `/dashboard/products`. 3. Hacer clic en "Crear Producto". 4. Rellenar el formulario del nuevo producto. 5. Enviar. 6. Verificar que el nuevo producto aparece en la tabla de productos. | `[ ] Pendiente` |
+
+---
+
+## 9.0 Documentación de Flujos
+
+### 9.1 Flujo de Subida de Imágenes
+
+1.  **Petición del Frontend:** El frontend envía una petición `POST` al endpoint `/upload/images` del backend. Esta petición contiene un campo `images` con hasta 10 archivos de imagen.
+2.  **Recepción en el Backend (`UploadController`):**
+    *   El controlador utiliza `FilesInterceptor` de NestJS para procesar los archivos multipart/form-data.
+    *   Los archivos recibidos se pasan al método `uploadFiles` como un array de `Express.Multer.File`.
+3.  **Subida a Supabase (`SupabaseService`):**
+    *   El controlador itera sobre cada archivo y llama al método `this.supabaseService.uploadFile(file)` para cada uno.
+    *   Este servicio se encarga de subir el buffer del archivo al almacenamiento (storage) de Supabase.
+    *   Supabase devuelve una URL pública para cada archivo subido.
+4.  **Respuesta al Frontend:**
+    *   El `UploadController` espera a que todas las promesas de subida se resuelvan.
+    *   Responde al frontend con un objeto JSON que contiene un array `imageUrls` con todas las URLs públicas generadas.
+5.  **Creación/Actualización del Producto (`ProductsService`):**
+    *   El frontend incluye el array `imageUrls` en el formulario de creación/actualización del producto.
+    *   El `ProductsService` recibe estas URLs y utiliza Prisma para crear los registros correspondientes en la tabla `Image`, asociados al nuevo producto.

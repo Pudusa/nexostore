@@ -30,8 +30,15 @@ async function bootstrap() {
 
   app.useStaticAssets(join(__dirname, '..', 'public'));
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  const frontendUrl = isProduction
+    ? process.env.FRONTEND_URL_PROD
+    : process.env.FRONTEND_URL_LOCAL;
+
+  logger.log(`CORS enabled for origin: ${frontendUrl}`);
+
   app.enableCors({
-    origin: 'http://localhost:3000', // O el origen de tu frontend
+    origin: frontendUrl,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
