@@ -1,8 +1,17 @@
 "use client";
 
-import { deleteProductAction } from "@/app/actions/product-actions";
+import {
+  deleteProductAction,
+  updateProductStockStatusAction,
+} from "@/app/actions/product-actions";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ArchiveX,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useTransition } from "react";
 import { Button } from "../ui/button";
@@ -15,13 +24,12 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
-import type { Role } from "@/lib/types";
-
 interface ProductActionsProps {
   productId: string;
   productManagerId: string;
   currentUserId: string;
   isSuperAdmin: boolean;
+  isOutOfStock: boolean;
 }
 
 export default function ProductActions({
@@ -29,6 +37,7 @@ export default function ProductActions({
   productManagerId,
   currentUserId,
   isSuperAdmin,
+  isOutOfStock,
 }: ProductActionsProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -48,6 +57,29 @@ export default function ProductActions({
           title: "Error",
           description:
             result.message || "Ocurrió un error al eliminar el producto.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  const handleToggleStock = () => {
+    startTransition(async () => {
+      const result = await updateProductStockStatusAction(
+        productId,
+        !isOutOfStock,
+      );
+      if (result.success) {
+        toast({
+          title: "Estado Actualizado",
+          description: "El estado del producto ha sido actualizado.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description:
+            result.message ||
+            "Ocurrió un error al actualizar el estado del producto.",
           variant: "destructive",
         });
       }
@@ -74,6 +106,14 @@ export default function ProductActions({
             <Pencil className="mr-2 h-4 w-4" />
             Editar
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleToggleStock} disabled={isPending}>
+          {isOutOfStock ? (
+            <ArchiveX className="mr-2 h-4 w-4" />
+          ) : (
+            <Archive className="mr-2 h-4 w-4" />
+          )}
+          {isOutOfStock ? "Marcar como en Stock" : "Marcar como Agotado"}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={handleDelete}

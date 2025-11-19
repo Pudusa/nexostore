@@ -4,14 +4,44 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { productSchema } from "@/lib/schemas";
 import {
-  createProduct as createProductApi,
+  updateProductStockStatus,
   deleteProduct as deleteProductApi,
-  updateProduct as updateProductApi,
-  uploadProductImages,
-  deleteProductImages,
 } from "@/lib/api";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { cookies } from "next/headers";
+
+export async function updateProductStockStatusAction(
+  productId: string,
+  isOutOfStock: boolean,
+) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return {
+      success: false,
+      message: "Error de autenticación. Por favor, inicia sesión de nuevo.",
+    };
+  }
+
+  try {
+    await updateProductStockStatus(productId, isOutOfStock);
+    revalidatePath("/dashboard/products");
+    return {
+      success: true,
+      message: "El estado del producto ha sido actualizado.",
+    };
+  } catch (error: any) {
+    console.error(
+      "[Server Action Error] Failed to update stock status:",
+      error.response?.data || error.message,
+    );
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        "Ocurrió un error al actualizar el estado del producto.",
+    };
+  }
+}
 
 export async function createProduct(
   prevState: any,
@@ -142,6 +172,7 @@ export async function updateProduct(
 
   const files = formData.getAll("images") as File[];
   const existingImages = formData.getAll("existingImages") as string[];
+  const imagesToDelete = formData.getAll("imagesToDelete") as string[];
   const coverImageName = formData.get("coverImageName") as string | null;
   const coverImageUrlFromExisting = formData.get("coverImageUrl") as string | null;
 
@@ -194,6 +225,7 @@ export async function updateProduct(
     phone: user.phone, // Usar el teléfono del usuario autenticado
     imageUrls: allImageUrls,
     coverImage: finalCoverImageUrl,
+    imagesToDelete: imagesToDelete,
     managerId: user.id,
   };
 

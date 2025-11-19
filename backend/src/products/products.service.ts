@@ -7,10 +7,15 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from '../prisma.service';
 import { AuthenticatedUser } from '../auth/types';
+import { SupabaseService } from '../supabase/supabase.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private supabaseService: SupabaseService,
+  ) {}
 
   create(createProductDto: CreateProductDto, user: AuthenticatedUser) {
     const { imageUrls, coverImage, ...productData } = createProductDto;
@@ -29,24 +34,53 @@ export class ProductsService {
     });
   }
 
-  findAll() {
-    return this.prisma.product.findMany({
-      where: {
-        manager: {
-          role: 'manager',
-        },
+  async findAll(
+    paginationDto: PaginationDto & { includeOutOfStock?: boolean },
+  ) {
+    const { limit = 10, offset = 0, includeOutOfStock = false } = paginationDto;
+
+    const whereCondition: any = {
+      manager: {
+        role: 'manager',
       },
-      include: {
-        images: true,
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
+    };
+
+    if (!includeOutOfStock) {
+      whereCondition.isOutOfStock = false;
+    }
+
+    const [products, totalItems] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where: whereCondition,
+        include: {
+          images: true,
+          manager: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
           },
         },
-      },
-    });
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.product.count({
+        where: whereCondition,
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const currentPage = Math.floor(offset / limit) + 1;
+
+    return {
+      data: products,
+      totalItems,
+      currentPage,
+      totalPages,
+      limit,
+      offset,
+    };
   }
 
   async findOne(id: string) {
@@ -69,43 +103,92 @@ export class ProductsService {
     return product;
   }
 
+  async updateStockStatus(
+    id: string,
+    isOutOfStock: boolean,
+    user: AuthenticatedUser,
+  ) {
+    const product = await this.findOne(id);
+    if (process.env.SUPER_ADMIN_MODE_ENABLED === 'true' && user.email === process.env.SUPER_ADMIN_EMAIL) {
+      // Super Admin can bypass ownership check
+    } else if (product.managerId !== user.id) {
+      throw new ForbiddenException(
+        'You are not allowed to update this product',
+      );
+    }
+
+    return this.prisma.product.update({
+      where: { id },
+      data: { isOutOfStock },
+    });
+  }
+
   async update(
     id: string,
     updateProductDto: UpdateProductDto,
     user: AuthenticatedUser,
   ) {
-    const product = await this.findOne(id); // Ensure product exists
+    const product = await this.findOne(id);
     if (process.env.SUPER_ADMIN_MODE_ENABLED === 'true' && user.email === process.env.SUPER_ADMIN_EMAIL) {
-      // Super Admin puede saltarse la verificación de propiedad
+      // Super Admin can bypass ownership check
     } else if (product.managerId !== user.id) {
       throw new ForbiddenException('You are not allowed to update this product');
     }
 
-    const { imageUrls, coverImage, ...productData } = updateProductDto;
+    const { imageUrls, coverImage, imagesToDelete, ...productData } =
+      updateProductDto;
 
-    return this.prisma.product.update({
-      where: { id },
-      data: {
-        ...productData,
-        coverImage,
-        images: {
-          deleteMany: {},
-          create: (imageUrls || []).map((url) => ({
-            url,
-            isCover: url === coverImage,
-          })),
+    const updatedProduct = await this.prisma.$transaction(async (prisma) => {
+      const result = await prisma.product.update({
+        where: { id },
+        data: {
+          ...productData,
+          coverImage,
+          images: {
+            deleteMany: imagesToDelete
+              ? { url: { in: imagesToDelete } }
+              : undefined,
+            create: imageUrls
+              ?.filter(
+                (url) => !product.images.some((img) => img.url === url),
+              )
+              .map((url) => ({
+                url,
+                isCover: url === coverImage,
+              })),
+          },
         },
-      },
-      include: {
-        images: true,
-      },
+        include: {
+          images: true,
+        },
+      });
+
+      // Update isCover flag for existing images
+      if (coverImage) {
+        await prisma.productImage.updateMany({
+          where: { productId: id },
+          data: { isCover: false },
+        });
+        await prisma.productImage.updateMany({
+          where: { productId: id, url: coverImage },
+          data: { isCover: true },
+        });
+      }
+
+      return result;
     });
+
+    if (imagesToDelete && imagesToDelete.length > 0) {
+      await this.supabaseService.deleteFiles(imagesToDelete);
+    }
+
+    return updatedProduct;
   }
 
   async remove(id: string, user: AuthenticatedUser) {
-    const product = await this.findOne(id); // Ensure product exists
+    const product = await this.findOne(id);
     if (process.env.SUPER_ADMIN_MODE_ENABLED === 'true' && user.email === process.env.SUPER_ADMIN_EMAIL) {
-      // Super Admin puede saltarse la verificación de propiedad
+      // Super Admin can bypass ownership check
     } else if (product.managerId !== user.id) {
       throw new ForbiddenException('You are not allowed to delete this product');
     }

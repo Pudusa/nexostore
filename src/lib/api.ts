@@ -1,7 +1,7 @@
 // src/lib/api.ts
 import axios from "axios";
 import { API_BASE_URL } from "./config";
-import type { Product, User } from "./types";
+import type { Product, User, PaginationParams, PaginatedResponse } from "./types";
 
 /**
  * Instancia de Axios para llamadas a la API pública.
@@ -35,8 +35,10 @@ export const getAuthenticatedApi = async () => {
 
 // --- Funciones de Productos ---
 
-export const getProducts = async (): Promise<Product[]> => {
-  const response = await api.get("/products");
+export const getProducts = async (
+  params?: PaginationParams & { includeOutOfStock?: boolean },
+): Promise<PaginatedResponse<Product>> => {
+  const response = await api.get("/products", { params });
   return response.data;
 };
 
@@ -55,10 +57,21 @@ export const createProduct = async (
 
 export const updateProduct = async (
   id: string,
-  productData: Partial<Omit<Product, "id" | "createdAt" | "updatedAt">>,
+  productData: Partial<Omit<Product, "id" | "createdAt" | "updatedAt"> & { imagesToDelete?: string[] }>,
 ): Promise<Product> => {
   const authApi = await getAuthenticatedApi();
   const response = await authApi.patch(`/products/${id}`, productData);
+  return response.data;
+};
+
+export const updateProductStockStatus = async (
+  productId: string,
+  isOutOfStock: boolean,
+): Promise<Product> => {
+  const authApi = await getAuthenticatedApi();
+  const response = await authApi.patch(`/products/${productId}/stock`, {
+    isOutOfStock,
+  });
   return response.data;
 };
 
@@ -104,7 +117,9 @@ export const updateRole = async (id: string, newRole: Role): Promise<User> => {
 
 // --- Funciones de Usuarios ---
 
-export const getUsers = async (params?: GetUsersDto): Promise<User[]> => {
+export const getUsers = async (
+  params?: GetUsersDto & PaginationParams,
+): Promise<PaginatedResponse<User>> => {
   const authApi = await getAuthenticatedApi();
   const response = await authApi.get("/users", { params });
   return response.data;

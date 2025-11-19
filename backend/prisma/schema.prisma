@@ -27,12 +27,13 @@ model User {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  description String
-  price       Float
-  coverImage  String?
-  images      ProductImage[] // Reemplaza imageUrls por una relación a ProductImage
+  id            String         @id @default(cuid())
+  name          String
+  description   String
+  price         Float
+  isOutOfStock  Boolean        @default(false)
+  coverImage    String?
+  images        ProductImage[] // Reemplaza imageUrls por una relación a ProductImage
 
   manager   User   @relation(fields: [managerId], references: [id], onDelete: Cascade)
   managerId String

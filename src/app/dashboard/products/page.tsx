@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import PaginationControls from "@/components/ui/pagination-controls";
 import { getProducts } from "@/lib/api";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { PlusCircle } from "lucide-react";
@@ -23,7 +25,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export default async function ManagerProductsPage() {
+export default async function ManagerProductsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const user = await getAuthenticatedUser();
 
   if (!user || (user.role !== "manager" && user.role !== "admin")) {
@@ -32,7 +38,21 @@ export default async function ManagerProductsPage() {
 
   const isSuperAdmin = user.email === process.env.SUPER_ADMIN_EMAIL;
 
-  const allProducts = await getProducts();
+  const limit = typeof searchParams.limit === "string" ? parseInt(searchParams.limit) : 10;
+  const offset = typeof searchParams.offset === "string" ? parseInt(searchParams.offset) : 0;
+
+  const paginatedProducts = await getProducts({
+    limit,
+    offset,
+    includeOutOfStock: true,
+  });
+  const {
+    data: allProducts,
+    totalItems,
+    currentPage,
+    totalPages,
+  } = paginatedProducts;
+
   const productsToShow =
     user.role === "admin"
       ? allProducts
@@ -74,6 +94,7 @@ export default async function ManagerProductsPage() {
                     <span className="sr-only">Image</span>
                   </TableHead>
                   <TableHead>Nombre</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead className="hidden md:table-cell">
                     Precio
                   </TableHead>
@@ -102,7 +123,15 @@ export default async function ManagerProductsPage() {
                       <TableCell className="font-medium">
                         {product.name}
                       </TableCell>
-
+                      <TableCell>
+                        <Badge
+                          variant={
+                            product.isOutOfStock ? "destructive" : "outline"
+                          }
+                        >
+                          {product.isOutOfStock ? "Agotado" : "En Stock"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {formatter.format(product.price)}
                       </TableCell>
@@ -112,6 +141,7 @@ export default async function ManagerProductsPage() {
                           productManagerId={product.managerId}
                           currentUserId={user.id}
                           isSuperAdmin={isSuperAdmin}
+                          isOutOfStock={product.isOutOfStock}
                         />
                       </TableCell>
                     </TableRow>
@@ -127,6 +157,13 @@ export default async function ManagerProductsPage() {
             </Table>
           </div>
         </CardContent>
+        <CardFooter>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            limit={limit}
+          />
+        </CardFooter>
       </Card>
     </div>
   );

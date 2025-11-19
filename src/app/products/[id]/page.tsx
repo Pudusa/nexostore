@@ -82,8 +82,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h2 className="text-xl font-semibold">Detalles del Producto</h2>
             <p className="mt-2 text-muted-foreground">{product.description}</p>
           </div>
-          
-          {manager?.phone && <ProductContact phone={manager.phone} />}
+
+          {product.isOutOfStock ? (
+            <div className="mt-6">
+              <Badge variant="destructive" className="text-lg">
+                Producto Agotado
+              </Badge>
+              <p className="mt-2 text-muted-foreground">
+                Este producto no está disponible actualmente.
+              </p>
+            </div>
+          ) : (
+            manager?.phone && <ProductContact phone={manager.phone} />
+          )}
         </div>
       </div>
     </div>
