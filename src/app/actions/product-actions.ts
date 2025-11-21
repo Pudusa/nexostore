@@ -6,6 +6,10 @@ import { productSchema } from "@/lib/schemas";
 import {
   updateProductStockStatus,
   deleteProduct as deleteProductApi,
+  createProduct as createProductApi,
+  updateProduct as updateProductApi,
+  uploadProductImages as apiUploadProductImages,
+  deleteProductImages,
 } from "@/lib/api";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -75,7 +79,7 @@ export async function createProduct(
   if (files.length > 0 && files[0].size > 0) {
     try {
       // uploadProductImages returns an array of { originalname: string, publicUrl: string }
-      const uploadedImages = await uploadProductImages(files);
+      const uploadedImages = await apiUploadProductImages(files);
       imageUrls = uploadedImages.map((img) => img.publicUrl);
 
       // Find the URL for the cover image using the original name
@@ -183,7 +187,7 @@ export async function updateProduct(
   // Upload new images if any
   if (files.length > 0 && files[0].size > 0) {
     try {
-      newlyUploadedImages = await uploadProductImages(files);
+      newlyUploadedImages = await apiUploadProductImages(files);
       newImageUrls = newlyUploadedImages.map((img) => img.publicUrl);
     } catch (error) {
       console.error("Error uploading new images:", error);

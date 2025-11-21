@@ -24,7 +24,7 @@ export class UsersService {
   }
 
   async findAll(getUsersDto: GetUsersDto) {
-    const { search, role } = getUsersDto;
+    const { search, role, limit = 10, offset = 0 } = getUsersDto;
     const where: Prisma.UserWhereInput = {
       email: {
         not: process.env.SUPER_ADMIN_EMAIL,
@@ -42,10 +42,27 @@ export class UsersService {
       where.role = role;
     }
 
-    return this.prisma.user.findMany({
-      where,
-      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true, phone: true },
-    });
+    const [users, totalItems] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true, phone: true },
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
+    const currentPage = Math.floor(offset / limit) + 1;
+
+    return {
+      data: users,
+      totalItems,
+      currentPage,
+      totalPages,
+      limit,
+      offset,
+    };
   }
 
   async findOne(id: string) {

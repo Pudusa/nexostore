@@ -1,5 +1,6 @@
-import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsNumber, IsPositive, Min } from 'class-validator';
 import { Role } from '@prisma/client';
+import { Type } from 'class-transformer';
 
 export class GetUsersDto {
   @IsOptional()
@@ -9,4 +10,16 @@ export class GetUsersDto {
   @IsOptional()
   @IsEnum(Role)
   role?: Role;
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  limit?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  offset?: number;
 }

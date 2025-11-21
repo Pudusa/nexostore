@@ -9,11 +9,17 @@ import { PrismaModule } from './prisma/prisma.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { UploadModule } from './upload/upload.module';
 import { LoggerMiddleware } from './logger.middleware';
+import { ThrottlerGuard, ThrottlerModule } from 'nestjs-throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    ThrottlerModule.forRoot({
+      ttl: 60,
+      limit: 100,
     }),
     UsersModule,
     ProductsModule,
@@ -23,7 +29,13 @@ import { LoggerMiddleware } from './logger.middleware';
     SupabaseModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

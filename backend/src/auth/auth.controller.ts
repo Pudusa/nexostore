@@ -1,4 +1,5 @@
 import { Controller, Post, UseGuards, Request, Get, Body, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Throttle } from 'nestjs-throttler';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -10,6 +11,7 @@ export class AuthController {
     private authService: AuthService,
   ) {}
 
+  @Throttle(3, 60)
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(@Request() req) {

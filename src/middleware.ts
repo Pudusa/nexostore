@@ -12,6 +12,11 @@ export async function middleware(request: NextRequest) {
   const user = await getAuthenticatedUser();
   const { pathname } = request.nextUrl;
 
+  const requestHeaders = new Headers(request.headers);
+  if (user) {
+    requestHeaders.set("x-user", JSON.stringify(user));
+  }
+
   // If user is not logged in and tries to access any dashboard route
   if (!user && pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -30,10 +35,22 @@ export async function middleware(request: NextRequest) {
 
       if (userRole === "admin") {
         // Admin has access to all dashboard routes
-        return NextResponse.next();
+        return NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
       }
 
       if (userRole === "manager") {
+        // Manager can access product-related routes but not admin routes
+        if (pathname.startsWith("/dashboard/products")) {
+          return NextResponse.next({
+            request: {
+              headers: requestHeaders,
+            },
+          });
+        }
         // Manager should not access admin routes
         if (protectedRoutes.admin.some((route) => pathname.startsWith(route))) {
           return NextResponse.redirect(new URL("/dashboard", request.url));
@@ -53,7 +70,11 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {

@@ -58,9 +58,11 @@ export default function ProductForm({ manager, product }: ProductFormProps) {
   const [newFiles, setNewFiles] = useState<File[]>([]);
   // State for existing images, using the structure from the Product type
   const [existingImages, setExistingImages] = useState(product?.images || []);
+  // State for images to be deleted from storage
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   // State for the cover image, which can be a new File or an existing image URL
   const [coverImage, setCoverImage] = useState<File | { url: string } | null>(
-    product?.coverImage ? { url: product.coverImage } : null
+    product?.coverImage ? { url: product.coverImage } : null,
   );
 
   useEffect(() => {
@@ -73,6 +75,7 @@ export default function ProductForm({ manager, product }: ProductFormProps) {
         formRef.current?.reset();
         setNewFiles([]);
         setExistingImages([]);
+        setImagesToDelete([]);
         setCoverImage(null);
       } else {
         // After editing, you might want to redirect or refresh the data
@@ -87,6 +90,14 @@ export default function ProductForm({ manager, product }: ProductFormProps) {
     }
   }, [state, toast, isEditing, router]);
 
+  const handleRemoveExistingImage = (image: ProductImage) => {
+    setExistingImages((prev) => prev.filter((img) => img.url !== image.url));
+    setImagesToDelete((prev) => [...prev, image.url]);
+    if (coverImage && "url" in coverImage && coverImage.url === image.url) {
+      setCoverImage(null);
+    }
+  };
+
   const handleSubmit = (formData: FormData) => {
     // Append new image files
     newFiles.forEach((file) => {
@@ -96,6 +107,11 @@ export default function ProductForm({ manager, product }: ProductFormProps) {
     // Append URLs of existing images that are kept
     existingImages.forEach((image) => {
       formData.append("existingImages", image.url);
+    });
+
+    // Append URLs of images to be deleted
+    imagesToDelete.forEach((url) => {
+      formData.append("imagesToDelete", url);
     });
 
     // Determine the cover image and append it
@@ -175,7 +191,7 @@ export default function ProductForm({ manager, product }: ProductFormProps) {
               existingImages={existingImages}
               coverImage={coverImage}
               onNewFilesChange={setNewFiles}
-              onExistingImagesChange={setExistingImages}
+              onRemoveExistingImage={handleRemoveExistingImage}
               onCoverImageChange={setCoverImage}
             />
             {state.errors?.imageUrls && (

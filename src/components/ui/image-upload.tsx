@@ -12,7 +12,7 @@ interface ImageUploadProps {
   existingImages: ProductImage[];
   coverImage: File | { url: string } | null;
   onNewFilesChange: (files: File[]) => void;
-  onExistingImagesChange: (images: ProductImage[]) => void;
+  onRemoveExistingImage: (image: ProductImage) => void;
   onCoverImageChange: (file: File | { url: string } | null) => void;
 }
 
@@ -21,7 +21,7 @@ export function ImageUpload({
   existingImages,
   coverImage,
   onNewFilesChange,
-  onExistingImagesChange,
+  onRemoveExistingImage,
   onCoverImageChange,
 }: ImageUploadProps) {
   const { toast } = useToast();
@@ -62,7 +62,7 @@ export function ImageUpload({
   };
 
   const handleRemoveExistingFile = (image: ProductImage) => {
-    onExistingImagesChange(existingImages.filter((img) => img.url !== image.url));
+    onRemoveExistingImage(image);
     if (coverImage && "url" in coverImage && coverImage.url === image.url) {
       onCoverImageChange(null);
     }

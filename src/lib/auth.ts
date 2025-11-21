@@ -1,10 +1,18 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { api, getAuthenticatedApi } from "./api";
 import { loginSchema, registerSchema } from "./schemas";
 import type { Role, User } from "./types";
+
+export const getCachedAuthenticatedUser = async (): Promise<User | null> => {
+  const userHeader = headers().get("x-user");
+  if (userHeader) {
+    return JSON.parse(userHeader);
+  }
+  return await getAuthenticatedUser();
+};
 
 export async function getAuthenticatedUser(): Promise<User | null> {
   const token = cookies().get("nexostore-session")?.value;

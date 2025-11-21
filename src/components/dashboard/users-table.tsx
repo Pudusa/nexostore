@@ -23,7 +23,7 @@ import {
 import { ListFilter } from "lucide-react";
 import UserActions from "@/components/dashboard/user-actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Role, ROLES } from "@/lib/types";
+import { User, Role } from "@/lib/types";
 
 interface UsersTableProps {
   users: User[];
@@ -103,7 +103,7 @@ export default function UsersTable({ users, currentUser }: UsersTableProps) {
             >
               Todos
             </DropdownMenuCheckboxItem>
-            {Object.values(ROLES)
+            {Object.values(Role)
               .filter((role) => role !== "admin")
               .map((role) => (
               <DropdownMenuCheckboxItem

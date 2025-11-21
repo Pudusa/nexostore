@@ -1,37 +1,53 @@
-export type Role = "admin" | "manager" | "client";
+// src/lib/types.ts
 
-export const ROLES: { [key in Role]: Role } = {
-  admin: 'admin',
-  manager: 'manager',
-  client: 'client',
-};
-
-export type GetUsersDto = {
-  search?: string;
-  role?: Role;
-};
-
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  phone?: string;
-  avatarUrl?: string;
-};
-
-export type Product = {
+export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
-  images: { url: string }[];
+  images: Image[];
+  coverImage?: string | null;
   managerId: string;
-  manager?: {
-    id: string;
-    name: string;
-    phone?: string;
-  };
-  // Keep imageUrls for backward compatibility if needed, but prefer images
-  imageUrls?: string[];
-};
+  manager: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Image {
+  id: string;
+  url: string;
+  isCover: boolean;
+  productId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  role: Role;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export enum Role {
+  customer = "customer",
+  manager = "manager",
+  admin = "admin",
+}
+
+export interface PaginationParams {
+  limit?: number;
+  offset?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalItems: number;
+  currentPage: number;
+  totalPages: number;
+  limit: number;
+  offset: number;
+}
