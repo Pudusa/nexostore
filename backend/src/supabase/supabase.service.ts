@@ -21,13 +21,13 @@ export class SupabaseService {
 
   async uploadFile(
     file: Express.Multer.File,
+    bucket: string = 'product-images',
   ): Promise<{ originalname: string; publicUrl: string }> {
-    const bucketName = "product-images";
     const fileExtension = extname(file.originalname);
     const fileName = `${uuidv4()}${fileExtension}`;
 
     const { error } = await this.supabase.storage
-      .from(bucketName)
+      .from(bucket)
       .upload(fileName, file.buffer, {
         contentType: file.mimetype,
         upsert: false,
@@ -40,7 +40,7 @@ export class SupabaseService {
     }
 
     const { data } = this.supabase.storage
-      .from(bucketName)
+      .from(bucket)
       .getPublicUrl(fileName);
 
     return {

@@ -35,3 +35,25 @@ export const loginSchema = z.object({
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
+
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.').optional(),
+  email: z.string().email('Por favor, introduce un correo electrónico válido.').optional(),
+  phone: z.string().refine((value) => isValidPhoneNumber(value || ''), {
+    message: 'El número de teléfono no es válido.',
+  }).optional(),
+  phoneCountry: z.string().optional(),
+  avatarUrl: z.string().url('La URL del avatar no es válida.').optional(),
+  oldPassword: z.string().optional(),
+  newPassword: z.string().min(8, 'La nueva contraseña debe tener al menos 8 caracteres.').optional(),
+}).refine(data => {
+  if (data.newPassword && !data.oldPassword) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'La contraseña antigua es necesaria para establecer una nueva.',
+  path: ['oldPassword'],
+});
+
+export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;

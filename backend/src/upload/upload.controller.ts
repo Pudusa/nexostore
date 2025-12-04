@@ -6,8 +6,9 @@ import {
   InternalServerErrorException,
   Logger, // Importamos el Logger
   Body,
+  UploadedFile,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Controller('upload')
@@ -73,6 +74,27 @@ export class UploadController {
     } catch (error) {
       this.logger.error(`[DELETE FAILED] Error during deletion process: ${error.message}`, error.stack);
       throw new InternalServerErrorException(`Failed to delete images: ${error.message}`);
+    }
+  }
+
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('avatar'))
+  async uploadAvatar(@UploadedFile() file: Express.Multer.File) {
+    this.logger.log(`[AVATAR UPLOAD START] Received request for avatar upload.`);
+
+    if (!file) {
+      this.logger.warn('[AVATAR UPLOAD WARN] No file was provided.');
+      throw new InternalServerErrorException('No file provided for upload.');
+    }
+
+    try {
+      this.logger.debug(`[AVATAR UPLOAD PROCESS] Processing file: ${file.originalname}`);
+      const uploadedImage = await this.supabaseService.uploadFile(file);
+      this.logger.log(`[AVATAR UPLOAD SUCCESS] Generated image data: ${JSON.stringify(uploadedImage)}`);
+      return uploadedImage;
+    } catch (error) {
+      this.logger.error(`[AVATAR UPLOAD FAILED] Error during upload: ${error.message}`, error.stack);
+      throw new InternalServerErrorException(`Failed to upload avatar: ${error.message}`);
     }
   }
 }

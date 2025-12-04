@@ -1,4 +1,4 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth, { getServerSession, NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { api } from "./api";
 import { User } from "./types";
@@ -71,6 +71,19 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+};
+
+export const getAuthenticatedUser = async () => {
+  const session = await getServerSession(authOptions);
+  return session?.user ?? null;
+};
+
+export const register = async (formData: FormData) => {
+  // TODO: Implement server action
+  return {
+    success: false,
+    message: "Not implemented",
+  }
 };
 
 

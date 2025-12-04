@@ -11,6 +11,8 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import ProductContact from "@/components/product-contact";
 
+export const dynamic = 'force-dynamic';
+
 interface ProductPageProps {
   params: {
     id: string;

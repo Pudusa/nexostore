@@ -21,6 +21,7 @@ model User {
   phoneCountry String
   avatarUrl String?
   products  Product[]
+  orders    Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -34,6 +35,7 @@ model Product {
   isOutOfStock  Boolean        @default(false)
   coverImage    String?
   images        ProductImage[] // Reemplaza imageUrls por una relación a ProductImage
+  orderItems    OrderItem[]
 
   manager   User   @relation(fields: [managerId], references: [id], onDelete: Cascade)
   managerId String
@@ -56,4 +58,40 @@ enum Role {
   admin
   manager
   client
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  total           Float
+  status          OrderStatus @default(PENDING)
+  shippingAddress String
+  customerPhone   String
+
+  customer   User   @relation(fields: [customerId], references: [id])
+  customerId String
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  price     Float
+
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String
+
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
 }

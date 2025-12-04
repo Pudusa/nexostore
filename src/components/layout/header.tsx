@@ -1,13 +1,15 @@
-import { getAuthenticatedUser } from "@/lib/auth";
+import { getServerSession } from "next-auth/next";
 import Link from "next/link";
 import Logo from "../logo";
 import { Button } from "../ui/button";
 import MainNav from "./main-nav";
 import MobileNav from "./mobile-nav";
 import UserNav from "../user-nav";
+import { authOptions } from "@/lib/auth";
 
 export default async function Header() {
-  const user = await getAuthenticatedUser();
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -19,7 +21,7 @@ export default async function Header() {
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
             {user ? (
-              <UserNav user={user} />
+              <UserNav />
             ) : (
               <Button asChild>
                 <Link href="/login">Iniciar Sesión</Link>

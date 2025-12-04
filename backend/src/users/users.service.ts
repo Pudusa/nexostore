@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma.service';
@@ -68,7 +74,7 @@ export class UsersService {
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true, phone: true },
+      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true, phone: true, phoneCountry: true, avatarUrl: true },
     });
 
     if (!user) {
@@ -78,20 +84,59 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto, performingUser: AuthenticatedUser) {
-    // Un usuario solo puede actualizar su propia información, a menos que sea admin/superadmin
-    if (
-      performingUser.id !== id &&
-      performingUser.role !== Role.admin &&
-      !(process.env.SUPER_ADMIN_MODE_ENABLED === 'true' && performingUser.email === process.env.SUPER_ADMIN_EMAIL)
-    ) {
+    if (performingUser.id !== id && performingUser.role !== Role.admin) {
       throw new ForbiddenException('You are not allowed to update this user');
     }
 
-    return this.prisma.user.update({
+    const userToUpdate = await this.prisma.user.findUnique({ where: { id } });
+    if (!userToUpdate) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
+    const { oldPassword, newPassword, ...updateData } = updateUserDto;
+    const dataToUpdate: Prisma.UserUpdateInput = { ...updateData };
+
+    if (newPassword) {
+      if (!oldPassword) {
+        throw new UnauthorizedException('Old password is required to set a new password.');
+      }
+
+      const isPasswordMatching = await bcrypt.compare(
+        oldPassword,
+        userToUpdate.password,
+      );
+
+      if (!isPasswordMatching) {
+        throw new UnauthorizedException('Old password does not match.');
+      }
+
+      dataToUpdate.password = await bcrypt.hash(newPassword, 10);
+    }
+    
+    const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
-      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true, phone: true },
+      data: dataToUpdate,
     });
+
+    const { password, ...result } = updatedUser;
+    return result;
+  }
+
+  async updateAvatar(id: string, avatarUrl: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: { avatarUrl },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...result } = updatedUser;
+    return result;
   }
 
   async findOneByEmail(email: string) {

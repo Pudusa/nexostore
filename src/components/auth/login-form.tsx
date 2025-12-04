@@ -1,6 +1,8 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,30 +14,43 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from "@/lib/auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Iniciando Sesión..." : "Iniciar Sesión"}
-    </Button>
-  );
-}
 
 export default function LoginForm() {
-  const initialState = { message: "", success: false };
-  const [state, dispatch] = useFormState(login, initialState);
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const successMessage = searchParams.get("success");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+
+    if (result?.ok) {
+      // Forzar una recarga completa de la página para asegurar la actualización de la sesión.
+      window.location.href = callbackUrl;
+    } else {
+      setError(result?.error || "Invalid credentials. Please try again.");
+    }
+    setIsSubmitting(false);
+  };
 
   return (
     <Card className="w-full max-w-sm">
-      <form action={dispatch}>
+      <form onSubmit={handleSubmit}>
         <CardHeader>
           <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
           <CardDescription>
@@ -52,13 +67,11 @@ export default function LoginForm() {
               </AlertDescription>
             </Alert>
           )}
-          {state?.message && (
-            <Alert variant={state.success ? "default" : "destructive"}>
+          {error && (
+            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>
-                {state.success ? "Éxito" : "Error de autenticación"}
-              </AlertTitle>
-              <AlertDescription>{state.message}</AlertDescription>
+              <AlertTitle>Error de autenticación</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
           <div className="grid gap-2">
@@ -69,15 +82,28 @@ export default function LoginForm() {
               name="email"
               placeholder="tu@email.com"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isSubmitting}
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Contraseña</Label>
-            <Input id="password" type="password" name="password" required />
+            <Input
+              id="password"
+              type="password"
+              name="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isSubmitting}
+            />
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <SubmitButton />
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Iniciando Sesión..." : "Iniciar Sesión"}
+          </Button>
           <div className="text-center text-sm">
             ¿No tienes una cuenta?{" "}
             <Link href="/register" className="underline">

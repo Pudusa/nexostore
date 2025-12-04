@@ -11,6 +11,9 @@ export const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./auth";
+
 /**
  * Función para obtener una instancia de Axios configurada con el token de autenticación.
  * Esta función se debe usar en el LADO DEL SERVIDOR (Server Actions, Route Handlers)
@@ -19,8 +22,8 @@ export const api = axios.create({
  * @returns Una instancia de Axios con el encabezado de autorización.
  */
 export const getAuthenticatedApi = async () => {
-  const { cookies } = await import("next/headers");
-  const token = cookies().get("nexostore-session")?.value;
+  const session = await getServerSession(authOptions);
+  const token = session?.user?.apiToken;
 
   const authenticatedApi = axios.create({
     baseURL: API_BASE_URL,
@@ -122,5 +125,27 @@ export const getUsers = async (
 ): Promise<PaginatedResponse<User>> => {
   const authApi = await getAuthenticatedApi();
   const response = await authApi.get("/users", { params });
+  return response.data;
+};
+
+export const updateProfile = async (
+  profileData: Partial<UpdateProfileFormValues>,
+): Promise<User> => {
+  const authApi = await getAuthenticatedApi();
+  const response = await authApi.patch("/users/me", profileData);
+  return response.data;
+};
+
+export const updateMyAvatar = async (
+  formData: FormData,
+): Promise<User> => {
+  const authApi = await getAuthenticatedApi();
+
+  const response = await authApi.post("/users/me/avatar", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  
   return response.data;
 };

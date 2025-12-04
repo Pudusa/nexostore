@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getAuthenticatedUser } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 
 const protectedRoutes = {
   admin: ["/dashboard/users"],
@@ -9,7 +9,21 @@ const protectedRoutes = {
 };
 
 export async function middleware(request: NextRequest) {
-  const user = await getAuthenticatedUser();
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  const user = token
+    ? {
+        id: token.id as string,
+        email: token.email as string,
+        name: token.name as string,
+        role: token.role as "admin" | "manager" | "client",
+        avatarUrl: token.avatarUrl as string | null,
+        apiToken: token.apiToken as string,
+      }
+    : null;
   const { pathname } = request.nextUrl;
 
   const requestHeaders = new Headers(request.headers);
