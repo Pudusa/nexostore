@@ -4,6 +4,7 @@ import { api } from "./api";
 import { User } from "./types";
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.AUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "Credentials",
