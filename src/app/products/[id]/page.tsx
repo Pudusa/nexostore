@@ -78,7 +78,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="flex items-center gap-2">
               <StarRating rating={product.averageRating} starSize={20} />
               <span className="text-lg font-bold">
-                {product.averageRating.toFixed(1)}
+                {(product.averageRating || 0).toFixed(1)}
               </span>
             </div>
           </div>
