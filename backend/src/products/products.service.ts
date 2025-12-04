@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -9,6 +10,7 @@ import { PrismaService } from '../prisma.service';
 import { AuthenticatedUser } from '../auth/types';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
@@ -18,6 +20,11 @@ export class ProductsService {
   ) {}
 
   create(createProductDto: CreateProductDto, user: AuthenticatedUser) {
+    if (user.role === Role.manager && !user.phone) {
+      throw new BadRequestException(
+        'Para crear productos, el manager debe tener un número de teléfono registrado.',
+      );
+    }
     const { imageUrls, coverImage, ...productData } = createProductDto;
     return this.prisma.product.create({
       data: {

@@ -5,6 +5,8 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  averageRating: number;
+  ratingCount: number;
   images: Image[];
   coverImage?: string | null;
   managerId: string;

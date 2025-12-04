@@ -10,6 +10,10 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import ProductContact from "@/components/product-contact";
+import { StarRating } from "@/components/ui/star-rating";
+import { RatingForm } from "@/components/products/rating-form";
+import { getAuthenticatedUser } from "@/lib/auth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const dynamic = 'force-dynamic';
 
@@ -21,12 +25,12 @@ interface ProductPageProps {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const product = await getProductById(params.id);
+  const user = await getAuthenticatedUser();
 
   if (!product) {
     notFound();
   }
 
-  // El manager ahora viene incluido en el producto
   const manager = product.manager;
 
   const formatter = new Intl.NumberFormat("en-US", {
@@ -69,6 +73,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
             {product.name}
           </h1>
+          
+          <div className="mt-2 flex items-center justify-start">
+            <div className="flex items-center gap-2">
+              <StarRating rating={product.averageRating} starSize={20} />
+              <span className="text-lg font-bold">
+                {product.averageRating.toFixed(1)}
+              </span>
+            </div>
+          </div>
 
           {manager && (
             <Badge variant="secondary" className="mt-2 w-fit">
@@ -99,6 +112,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
           )}
         </div>
       </div>
+      
+      {user && user.id !== manager?.id && (
+        <div className="mt-10">
+          <Card>
+            <CardHeader>
+              <CardTitle>¿Ya tienes este producto?</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RatingForm productId={product.id} userId={user.id} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

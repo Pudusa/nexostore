@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import { StarRating } from "./ui/star-rating";
 
 interface ProductCardProps {
   product: Product;
@@ -42,6 +43,14 @@ export default function ProductCard({ product }: ProductCardProps) {
               ? `${product.description.substring(0, 50)}...`
               : product.description}
           </p>
+          <div className="mt-2 flex items-center justify-start">
+            <div className="flex items-center gap-1">
+              <StarRating rating={product.averageRating} starSize={16} />
+              <span className="text-xs font-bold">
+                {product.averageRating.toFixed(1)}
+              </span>
+            </div>
+          </div>
         </CardContent>
         <CardFooter className="p-4 pt-0">
           <p className="text-lg font-bold text-primary">

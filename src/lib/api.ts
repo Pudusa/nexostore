@@ -118,7 +118,13 @@ export const updateRole = async (id: string, newRole: Role): Promise<User> => {
   return response.data;
 };
 
-// --- Funciones de Usuarios ---
+// --- Funciones de Valoraciones ---
+
+export const submitRating = async (productId: string, rating: number): Promise<void> => {
+  const authApi = await getAuthenticatedApi();
+  await authApi.post(`/ratings`, { productId, value: rating });
+};
+
 
 export const getUsers = async (
   params?: GetUsersDto & PaginationParams,

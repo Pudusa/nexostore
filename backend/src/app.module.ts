@@ -11,6 +11,7 @@ import { UploadModule } from './upload/upload.module';
 import { LoggerMiddleware } from './logger.middleware';
 import { ThrottlerGuard, ThrottlerModule, seconds } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { RatingsModule } from './ratings/ratings.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { APP_GUARD } from '@nestjs/core';
     PrismaModule,
     UploadModule,
     SupabaseModule,
+    RatingsModule,
   ],
   controllers: [AppController],
   providers: [
