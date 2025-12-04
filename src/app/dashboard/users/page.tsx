@@ -1,4 +1,5 @@
-import { getAuthenticatedUser } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getUsers } from "@/lib/api";
 import { redirect } from "next/navigation";
 import {
@@ -23,7 +24,8 @@ interface UsersPageProps {
 }
 
 export default async function UsersPage({ searchParams }: UsersPageProps) {
-  const user = await getAuthenticatedUser();
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
 
   if (!user || user.role !== "admin") {
     redirect("/login");

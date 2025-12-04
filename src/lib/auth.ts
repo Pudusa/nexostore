@@ -1,118 +1,76 @@
-"use server";
+import NextAuth, { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { api } from "./api";
+import { User } from "./types";
 
-import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { api, getAuthenticatedApi } from "./api";
-import { loginSchema, registerSchema } from "./schemas";
-import type { Role, User } from "./types";
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials) return null;
 
-export const getCachedAuthenticatedUser = async (): Promise<User | null> => {
-  const userHeader = headers().get("x-user");
-  if (userHeader) {
-    return JSON.parse(userHeader);
-  }
-  return await getAuthenticatedUser();
+        try {
+          const { data } = await api.post("/auth/login", {
+            email: credentials.email,
+            password: credentials.password,
+          });
+
+          const { access_token, user } = data;
+
+          if (access_token && user) {
+            return { ...user, apiToken: access_token };
+          }
+          return null;
+        } catch (error) {
+          console.error("Authorize error:", error);
+          return null;
+        }
+      },
+    }),
+  ],
+  session: {
+    strategy: "jwt",
+  },
+  callbacks: {
+    async jwt({ token, user, trigger, session }) {
+      // Si el trigger es "update", significa que se llamó a la función `update` del lado del cliente.
+      if (trigger === "update" && session?.user) {
+        token.name = session.user.name;
+        token.email = session.user.email;
+        token.avatarUrl = session.user.avatarUrl;
+        // Puedes añadir aquí cualquier otro campo del usuario que quieras que se pueda actualizar
+      }
+
+      if (user) {
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.role = user.role;
+        token.apiToken = user.apiToken;
+        token.avatarUrl = user.avatarUrl;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id as string;
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
+        session.user.role = token.role as any;
+        session.user.apiToken = token.apiToken as string;
+        session.user.avatarUrl = token.avatarUrl as string | null;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/login",
+  },
 };
-
-export async function getAuthenticatedUser(): Promise<User | null> {
-  const token = cookies().get("nexostore-session")?.value;
-  if (!token) {
-    return null;
-  }
-
-  try {
-    // Use the authenticated API instance to fetch the user profile
-    const authApi = await getAuthenticatedApi();
-    const response = await authApi.get<User>("/auth/profile");
-    return response.data;
-  } catch (error) {
-    // If the token is invalid or expired, the API call will fail.
-    console.error("Authentication error:", error);
-    return null;
-  }
-}
-
-export async function login(
-  prevState: any,
-  formData: FormData,
-): Promise<{ message?: string; success: boolean }> {
-  const data = Object.fromEntries(formData.entries());
-  const validation = loginSchema.safeParse(data);
-
-  if (!validation.success) {
-    return {
-      message: "Datos inválidos. Por favor, revisa tu email y contraseña.",
-      success: false,
-    };
-  }
-
-  try {
-    const response = await api.post<{ access_token: string }>(
-      "/auth/login",
-      validation.data,
-    );
-    const { access_token } = response.data;
-
-    cookies().set("nexostore-session", access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      sameSite: "strict",
-    });
-  } catch (error: any) {
-    console.error("Login API Error:", error.response?.data);
-    return {
-      message:
-        error.response?.data?.message ||
-        "Error en el inicio de sesión. Verifica tus credenciales.",
-      success: false,
-    };
-  }
-
-  redirect("/");
-}
-
-export async function logout() {
-  cookies().delete("nexostore-session");
-  redirect("/login");
-}
-
-export async function register(formData: FormData) {
-  const data = Object.fromEntries(formData.entries());
-  const validation = registerSchema.safeParse(data);
-
-  if (!validation.success) {
-    console.error("Validation Error:", validation.error.flatten().fieldErrors);
-    return redirect("/register?error=ValidationError");
-  }
-
-  try {
-    // Excluir confirmPassword, ya que no es parte del DTO del backend
-    const { confirmPassword, ...registrationData } = validation.data;
-    await api.post("/auth/register", registrationData);
-  } catch (error: any) {
-    console.error("Registration API Error:", error.response?.data);
-    if (error.response?.data?.message?.includes("already exists")) {
-      return redirect("/register?error=UserExists");
-    }
-    return redirect("/register?error=RegistrationFailed");
-  }
-
-  redirect("/login?success=true");
-}
-
-export async function updateUserRole(userId: string, role: Role) {
-  const authApi = await getAuthenticatedApi();
-  try {
-    const response = await authApi.patch(`/users/${userId}/role`, { role });
-    return { success: true, data: response.data };
-  } catch (error: any) {
-    console.error("Failed to update user role:", error.response?.data);
-    return {
-      success: false,
-      error: error.response?.data?.message || "Server Error",
-    };
-  }
-}
 
 
