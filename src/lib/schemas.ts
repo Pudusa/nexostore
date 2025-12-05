@@ -57,3 +57,11 @@ export const updateProfileSchema = z.object({
 });
 
 export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
+
+export const ratingSchema = z.object({
+  productId: z.string().min(1, 'Product ID is required'),
+  value: z.number().int().min(1).max(5, 'Rating must be between 1 and 5'),
+  comment: z.string().max(500, 'Comment cannot exceed 500 characters').optional().or(z.literal('')), // Permite string vacío como opcional
+});
+
+export type RatingFormValues = z.infer<typeof ratingSchema>;

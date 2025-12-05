@@ -120,9 +120,9 @@ export const updateRole = async (id: string, newRole: Role): Promise<User> => {
 
 // --- Funciones de Valoraciones ---
 
-export const submitRating = async (productId: string, rating: number): Promise<void> => {
+export const submitRating = async (productId: string, value: number, comment?: string): Promise<void> => {
   const authApi = await getAuthenticatedApi();
-  await authApi.post(`/ratings`, { productId, value: rating });
+  await authApi.post(`/ratings`, { productId, value, comment });
 };
 
 

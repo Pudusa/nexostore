@@ -23,7 +23,6 @@ model User {
   products  Product[]
   orders    Order[]
   ratings   Rating[]
-  comments  Comment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -40,7 +39,6 @@ model Product {
   averageRating Float          @default(0)
   ratingCount   Int            @default(0)
   ratings       Rating[]
-  comments      Comment[]
   orderItems    OrderItem[]
 
   manager   User   @relation(fields: [managerId], references: [id], onDelete: Cascade)
@@ -96,7 +94,8 @@ model OrderItem {
 
 model Rating {
   id        String   @id @default(cuid())
-  value     Int      // El valor de la valoración, ej: 1 a 5
+  rating    Int      // El valor de la valoración, ej: 1 a 5
+  comment   String?  // Comentario opcional del usuario
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -107,19 +106,6 @@ model Rating {
   productId String
 
   @@unique([userId, productId]) // <-- RESTRICCIÓN CLAVE: Un usuario solo puede valorar un producto una vez.
-}
-
-model Comment {
-  id        String   @id @default(cuid())
-  text      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String
 }
 
 enum OrderStatus {

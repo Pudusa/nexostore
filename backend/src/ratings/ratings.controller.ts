@@ -8,6 +8,9 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Param,
+  Get,
+  Query,
 } from '@nestjs/common';
 import { RatingsService } from './ratings.service';
 import { CreateRatingDto } from './dto/create-rating.dto';
@@ -26,8 +29,8 @@ export class RatingsController {
     @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const { productId, value } = createRatingDto;
-    return this.ratingsService.upsertRating(userId, productId, value);
+    const { productId, value, comment } = createRatingDto;
+    return this.ratingsService.upsertRating(userId, productId, value, comment);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -38,8 +41,27 @@ export class RatingsController {
     @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
-    const { productId, value } = createRatingDto;
-    return this.ratingsService.upsertRating(userId, productId, value);
+    const { productId, value, comment } = createRatingDto;
+    return this.ratingsService.upsertRating(userId, productId, value, comment);
+  }
+
+  @Get('/products/:id/summary')
+  @HttpCode(HttpStatus.OK)
+  async getProductRatingsSummary(@Param('id') productId: string) {
+    return this.ratingsService.getRatingsSummary(productId);
+  }
+
+  @Get('/products/:id')
+  @HttpCode(HttpStatus.OK)
+  async getProductRatings(
+    @Param('id') productId: string,
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+  ) {
+    return this.ratingsService.getRatingsWithUsers(
+      productId,
+      skip ? parseInt(skip, 10) : undefined,
+      take ? parseInt(take, 10) : undefined,
+    );
   }
 }
-

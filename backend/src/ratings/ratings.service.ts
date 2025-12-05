@@ -22,6 +22,7 @@ export class RatingsService {
     userId: string,
     productId: string,
     value: number,
+    comment?: string,
   ): Promise<any> {
     return this.prisma.$transaction(async (tx) => {
       // 1. Crear o actualizar la valoración del usuario para este producto.
@@ -32,11 +33,12 @@ export class RatingsService {
             productId,
           },
         },
-        update: { value },
+        update: { value, comment },
         create: {
           userId,
           productId,
           value,
+          comment,
         },
       });
 
@@ -64,6 +66,54 @@ export class RatingsService {
       });
 
       return updatedProduct;
+    });
+  }
+
+  async getRatingsSummary(productId: string) {
+    const ratings = await this.prisma.rating.findMany({
+      where: { productId },
+      select: { value: true },
+    });
+
+    const totalRatings = ratings.length;
+    let sumRatings = 0;
+    const ratingsCount = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
+
+    ratings.forEach((r) => {
+      sumRatings += r.value;
+      ratingsCount[r.value]++;
+    });
+
+    const averageRating = totalRatings > 0 ? sumRatings / totalRatings : 0;
+
+    return {
+      averageRating: parseFloat(averageRating.toFixed(1)),
+      totalRatings,
+      ratingsCount,
+    };
+  }
+
+  async getRatingsWithUsers(
+    productId: string,
+    skip: number = 0,
+    take: number = 10,
+  ) {
+    return this.prisma.rating.findMany({
+      where: { productId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take,
     });
   }
 }

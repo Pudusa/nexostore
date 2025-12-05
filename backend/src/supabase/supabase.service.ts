@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
+import * as sharp from 'sharp';
 
 @Injectable()
 export class SupabaseService {
@@ -23,13 +24,18 @@ export class SupabaseService {
     file: Express.Multer.File,
     bucket: string = 'product-images',
   ): Promise<{ originalname: string; publicUrl: string }> {
-    const fileExtension = extname(file.originalname);
-    const fileName = `${uuidv4()}${fileExtension}`;
+    // Optimizar la imagen con sharp
+    const optimizedBuffer = await sharp(file.buffer)
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    const fileName = `${uuidv4()}.webp`; // Cambiar extensión a webp
 
     const { error } = await this.supabase.storage
       .from(bucket)
-      .upload(fileName, file.buffer, {
-        contentType: file.mimetype,
+      .upload(fileName, optimizedBuffer, {
+        contentType: 'image/webp', // Cambiar mimetype a webp
         upsert: false,
       });
 

@@ -5,10 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { submitRating as submitRatingApi } from '@/lib/api';
-
-const ratingSchema = z.object({
-  rating: z.coerce.number().int().min(1, "La valoración debe ser de al menos 1.").max(5, "La valoración no puede ser mayor a 5."),
-});
+import { ratingSchema } from '@/lib/schemas'; // Importar el esquema de rating global
 
 export async function submitRating(productId: string, prevState: any, formData: FormData) {
   const user = await getAuthenticatedUser();
@@ -20,7 +17,9 @@ export async function submitRating(productId: string, prevState: any, formData: 
   }
 
   const validation = ratingSchema.safeParse({
-    rating: formData.get('rating'),
+    productId,
+    value: parseInt(formData.get('value') as string, 10),
+    comment: formData.get('comment'),
   });
 
   if (!validation.success) {
@@ -32,7 +31,8 @@ export async function submitRating(productId: string, prevState: any, formData: 
   }
 
   try {
-    await submitRatingApi(productId, validation.data.rating);
+    const { value, comment } = validation.data;
+    await submitRatingApi(productId, value, comment);
     revalidatePath(`/products/${productId}`);
     return {
       success: true,
