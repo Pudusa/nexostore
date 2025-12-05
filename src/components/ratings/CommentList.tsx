@@ -1,13 +1,13 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface Comment {
   id: string;
-  comment?: string;
-  value: number; // El valor de la estrella de este comentario
+  comment?: string | null;
+  rating: number; // Corregido de 'value' a 'rating'
   createdAt: string;
   user: {
     id: string;
@@ -54,8 +54,8 @@ export function CommentList({ comments }: CommentListProps) {
               <div className="flex items-center justify-between">
                 <p className="font-semibold">{comment.user.name}</p>
                 <div className="flex items-center gap-1">
-                  {renderStars(comment.value)}
-                  <span className="text-sm text-gray-500">{comment.value.toFixed(1)}</span>
+                  {renderStars(comment.rating)}
+                  <span className="text-sm text-gray-500">{comment.rating.toFixed(1)}</span>
                 </div>
               </div>
               <p className="text-sm text-gray-500 mb-2">

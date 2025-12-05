@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { AvatarUploadModal } from '@/src/components/user-profile/AvatarUploadModal';
+import { AvatarUploadModal } from '@/components/user-profile/AvatarUploadModal';
 
 export function AvatarEditor() {
   const { data: session, update } = useSession();

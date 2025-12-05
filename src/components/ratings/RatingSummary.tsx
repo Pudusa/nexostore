@@ -1,7 +1,7 @@
 "use client"
 
-import { Progress } from "@/src/components/ui/progress";
-import { cn } from "@/src/lib/utils";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import { Star } from "lucide-react";
 
 interface RatingSummaryProps {

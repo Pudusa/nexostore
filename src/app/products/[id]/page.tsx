@@ -5,15 +5,18 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { getProductById } from "@/lib/api";
+import { getProductById, getRatingsSummary, getRatingsWithUsers } from "@/lib/api";
 import { notFound } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import ProductContact from "@/components/product-contact";
 import { StarRating } from "@/components/ui/star-rating";
-import { RatingForm } from "@/components/products/rating-form";
+import { RatingForm } from "@/components/ratings/RatingForm";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RatingSummary } from "@/components/ratings/RatingSummary";
+import { CommentList } from "@/components/ratings/CommentList";
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +29,8 @@ interface ProductPageProps {
 export default async function ProductPage({ params }: ProductPageProps) {
   const product = await getProductById(params.id);
   const user = await getAuthenticatedUser();
+  const summary = await getRatingsSummary(params.id);
+  const ratings = await getRatingsWithUsers(params.id);
 
   if (!product) {
     notFound();
@@ -43,6 +48,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     if (b.url === product.coverImage) return 1;
     return 0;
   });
+
+  const handleRatingSubmitted = async () => {
+    "use server";
+    revalidatePath(`/products/${params.id}`);
+  };
+
+  const currentUserRating = ratings.find(r => r.user.id === user?.id);
 
   return (
     <div className="container max-w-4xl mx-auto py-8">
@@ -108,19 +120,34 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </p>
             </div>
           ) : (
-            manager?.phone && <ProductContact phone={manager.phone} />
+            manager?.phone && user?.id !== manager.id && <ProductContact phone={manager.phone} />
           )}
         </div>
       </div>
       
+      <div className="mt-10">
+        <RatingSummary
+          averageRating={summary.averageRating}
+          totalRatings={summary.totalRatings}
+          ratingsCount={summary.ratingsCount}
+        />
+        <CommentList comments={ratings} />
+      </div>
+
       {user && user.id !== manager?.id && (
         <div className="mt-10">
           <Card>
             <CardHeader>
-              <CardTitle>¿Ya tienes este producto?</CardTitle>
+              <CardTitle>
+                {currentUserRating ? "Edita tu valoración" : "¿Ya tienes este producto?"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <RatingForm productId={product.id} userId={user.id} />
+              <RatingForm 
+                productId={product.id} 
+                onRatingSubmitted={handleRatingSubmitted} 
+                currentUserRating={currentUserRating}
+              />
             </CardContent>
           </Card>
         </div>

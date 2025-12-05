@@ -3,12 +3,13 @@
 import { useState, useCallback } from "react";
 import Cropper from "react-easy-crop";
 import { Area, Point } from "react-easy-crop";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
-import { Slider } from "@/src/components/ui/slider";
-import { getCroppedImg } from "@/src/lib/utils"; // Necesitará una función de utilidad para esto
-import { useToast } from "@/src/hooks/use-toast";
-import { updateMyAvatar } from "@/src/lib/api"; // Server Action para subir avatar
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { getCroppedImg } from "@/lib/utils"; // Necesitará una función de utilidad para esto
+import { useToast } from "@/hooks/use-toast";
+import { updateMyAvatar } from "@/app/actions/user-actions"; // Corregido: Usar la Server Action
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 interface AvatarUploadModalProps {
@@ -27,6 +28,7 @@ export function AvatarUploadModal({
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [loading, setLoading] = useState(false);
+  const { data: session, update } = useSession();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -63,14 +65,28 @@ export function AvatarUploadModal({
       const formData = new FormData();
       formData.append("avatar", croppedImageBlob, "avatar.webp"); // Nombre de archivo genérico y formato webp
 
-      await updateMyAvatar(formData); // Llama a la Server Action
-      toast({
-        title: "Éxito",
-        description: "Tu avatar ha sido actualizado.",
-      });
-      onAvatarUpdated?.();
-      router.refresh(); // Refrescar la página para mostrar el nuevo avatar
-      onClose();
+      const result = await updateMyAvatar(formData);
+
+      if (result.success && result.data) {
+        toast({
+          title: "Éxito",
+          description: "Tu avatar ha sido actualizado.",
+        });
+        
+        // Actualizar la sesión del lado del cliente
+        await update({
+          ...session,
+          user: {
+            ...session?.user,
+            avatarUrl: result.data.avatarUrl,
+          },
+        });
+        
+        onAvatarUpdated?.();
+        onClose();
+      } else {
+        throw new Error(result.error || "Error al actualizar el avatar");
+      }
     } catch (e) {
       console.error(e);
       toast({
@@ -97,6 +113,9 @@ export function AvatarUploadModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Actualizar Avatar</DialogTitle>
+          <DialogDescription>
+            Selecciona una imagen y ajústala para tu nuevo avatar.
+          </DialogDescription>
         </DialogHeader>
         {!imageSrc ? (
           <div className="grid gap-4 py-4">
@@ -119,7 +138,7 @@ export function AvatarUploadModal({
               />
             </div>
             <div className="flex flex-col gap-2">
-              <FormLabel>Zoom</FormLabel>
+              <label className="text-sm font-medium">Zoom</label>
               <Slider
                 min={1}
                 max={3}

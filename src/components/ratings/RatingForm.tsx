@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Star } from "lucide-react";
-import { cn } from "@/src/lib/utils";
-import { ratingSchema, RatingFormValues } from "@/src/lib/schemas";
-import { Button } from "@/src/components/ui/button";
-import { Textarea } from "@/src/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { ratingSchema, RatingFormValues } from "@/lib/schemas";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -15,16 +15,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/src/components/ui/form";
-import { useToast } from "@/src/hooks/use-toast";
+} from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { submitRatingAction } from "@/app/actions/rating-actions";
 import { useSession } from "next-auth/react";
 
 interface RatingFormProps {
   productId: string;
   onRatingSubmitted: () => void;
+  currentUserRating?: { rating: number; comment?: string | null };
 }
 
-export function RatingForm({ productId, onRatingSubmitted }: RatingFormProps) {
+export function RatingForm({ productId, onRatingSubmitted, currentUserRating }: RatingFormProps) {
   const { data: session } = useSession();
   const { toast } = useToast();
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -33,8 +35,8 @@ export function RatingForm({ productId, onRatingSubmitted }: RatingFormProps) {
     resolver: zodResolver(ratingSchema),
     defaultValues: {
       productId,
-      value: 0,
-      comment: "",
+      value: currentUserRating?.rating || 0,
+      comment: currentUserRating?.comment || "",
     },
   });
 
@@ -49,20 +51,23 @@ export function RatingForm({ productId, onRatingSubmitted }: RatingFormProps) {
     }
 
     try {
-      // TODO: Implement Server Action for submitting rating
-      console.log("Submitting rating:", data);
+      const result = await submitRatingAction(data);
 
-      toast({
-        title: "Éxito",
-        description: "Tu valoración ha sido enviada con éxito.",
-      });
-      form.reset();
-      onRatingSubmitted();
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: result.message,
+        });
+        form.reset();
+        onRatingSubmitted();
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error) {
       console.error("Error submitting rating:", error);
       toast({
         title: "Error",
-        description: "Hubo un error al enviar tu valoración.",
+        description: error instanceof Error ? error.message : "Hubo un error al enviar tu valoración.",
         variant: "destructive",
       });
     }
@@ -88,10 +93,9 @@ export function RatingForm({ productId, onRatingSubmitted }: RatingFormProps) {
                         key={star}
                         className={cn(
                           "h-7 w-7 cursor-pointer transition-colors",
-                          (hoveredRating || currentRating) >= star
-                            ? "text-yellow-400 fill-current"
-                            : "text-gray-300"
-                        )}
+                                                    (hoveredRating || currentRating) >= star
+                                                      ? "text-yellow-400 fill-current"
+                                                      : "text-gray-300"                        )}
                         onMouseEnter={() => setHoveredRating(star)}
                         onMouseLeave={() => setHoveredRating(0)}
                         onClick={() => field.onChange(star)}

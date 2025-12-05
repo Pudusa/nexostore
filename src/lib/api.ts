@@ -125,6 +125,15 @@ export const submitRating = async (productId: string, value: number, comment?: s
   await authApi.post(`/ratings`, { productId, value, comment });
 };
 
+export const getRatingsSummary = async (productId: string): Promise<{ averageRating: number; totalRatings: number; ratingsCount: any; }> => {
+  const response = await api.get(`/ratings/products/${productId}/summary`);
+  return response.data;
+};
+
+export const getRatingsWithUsers = async (productId: string): Promise<any[]> => {
+  const response = await api.get(`/ratings/products/${productId}`);
+  return response.data;
+};
 
 export const getUsers = async (
   params?: GetUsersDto & PaginationParams,

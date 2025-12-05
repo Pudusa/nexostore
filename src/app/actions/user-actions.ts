@@ -71,7 +71,7 @@ export async function updateUserRole(userId: string, role: Role): Promise<FormSt
   }
 }
 
-export async function updateUserAvatar(
+export async function updateMyAvatar(
   formData: FormData,
 ): Promise<FormState> {
   const session = await getServerSession(authOptions);

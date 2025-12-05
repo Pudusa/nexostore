@@ -1,7 +1,6 @@
 
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { Rating } from '@prisma/client';
 
 @Injectable()
 export class RatingsService {
@@ -16,6 +15,7 @@ export class RatingsService {
    * @param userId - El ID del usuario que emite la valoración.
    * @param productId - El ID del producto a valorar.
    * @param value - El valor de la valoración (típicamente de 1 a 5).
+   * @param comment - El comentario opcional del usuario.
    * @returns El producto actualizado con el nuevo promedio y conteo de valoraciones.
    */
   async upsertRating(
@@ -33,11 +33,11 @@ export class RatingsService {
             productId,
           },
         },
-        update: { value, comment },
+        update: { rating: value, comment },
         create: {
           userId,
           productId,
-          value,
+          rating: value,
           comment,
         },
       });
@@ -46,15 +46,15 @@ export class RatingsService {
       const stats = await tx.rating.aggregate({
         where: { productId },
         _avg: {
-          value: true,
+          rating: true,
         },
         _count: {
           _all: true,
         },
       });
 
-      const averageRating = stats._avg.value || 0;
-      const ratingCount = stats._count._all;
+      const averageRating = stats._avg?.rating || 0;
+      const ratingCount = stats._count?._all || 0;
 
       // 3. Actualizar el producto con los nuevos datos.
       const updatedProduct = await tx.product.update({
@@ -72,7 +72,7 @@ export class RatingsService {
   async getRatingsSummary(productId: string) {
     const ratings = await this.prisma.rating.findMany({
       where: { productId },
-      select: { value: true },
+      select: { rating: true },
     });
 
     const totalRatings = ratings.length;
@@ -80,8 +80,8 @@ export class RatingsService {
     const ratingsCount = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
 
     ratings.forEach((r) => {
-      sumRatings += r.value;
-      ratingsCount[r.value]++;
+      sumRatings += r.rating;
+      ratingsCount[r.rating]++;
     });
 
     const averageRating = totalRatings > 0 ? sumRatings / totalRatings : 0;

@@ -51,7 +51,7 @@ export class UsersService {
     const [users, totalItems] = await this.prisma.$transaction([
       this.prisma.user.findMany({
         where,
-        select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true, phone: true },
+        select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true, phone: true, avatarUrl: true },
         take: limit,
         skip: offset,
       }),
@@ -140,9 +140,20 @@ export class UsersService {
   }
 
   async findOneByEmail(email: string) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        password: true,
+        role: true,
+        avatarUrl: true,
+        phone: true,
+        phoneCountry: true,
+      },
     });
+    return user;
   }
 
   async remove(id: string, performingUser: AuthenticatedUser) {
