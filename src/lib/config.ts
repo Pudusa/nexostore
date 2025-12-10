@@ -14,14 +14,18 @@ export const getApiBaseUrl = (): string => {
       const hostname = window.location.hostname;
       // Si estamos en localhost, intentamos obtener la IP real de la red
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        // En desarrollo local, usar variable de entorno o fallback
-        return 'http://' + (process.env.BACKEND_HOST || 'localhost') + ':3001';
+        // Si el frontend está corriendo en 0.0.0.0, accederemos al backend en localhost
+        // Si accedemos desde localhost, usamos localhost para el backend
+        return 'http://localhost:3001';
       } else {
+        // En este caso, estamos accediendo desde una IP específica (como 0.0.0.0:3000)
+        // así que usamos esa IP para conectarnos al backend
         return `http://${hostname}:3001`;
       }
     } else {
       // En el servidor (durante SSR), usar 'localhost' o la variable de entorno
-      return 'http://' + (process.env.BACKEND_HOST || 'localhost') + ':3001';
+      // Para desarrollo SSR, usar localhost para el backend
+      return 'http://localhost:3001';
     }
   }
 

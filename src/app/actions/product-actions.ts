@@ -122,7 +122,6 @@ export async function createProduct(
     // Si la validación falla después de subir imágenes, eliminarlas.
     if (imageUrls.length > 0) {
       await deleteProductImages(imageUrls);
-      console.log("Cleaned up uploaded images due to validation error.");
     }
     return {
       errors: validation.error.flatten().fieldErrors,
@@ -137,7 +136,6 @@ export async function createProduct(
     // Si la creación del producto falla, también eliminar las imágenes.
     if (imageUrls.length > 0) {
       await deleteProductImages(imageUrls);
-      console.log("Cleaned up uploaded images due to API error.");
     }
     return {
       message: "Error al crear el producto. Por favor, inténtalo más tarde.",
@@ -239,7 +237,6 @@ export async function updateProduct(
     // Si la validación falla, eliminar solo las nuevas imágenes subidas.
     if (newImageUrls.length > 0) {
       await deleteProductImages(newImageUrls);
-      console.log("Cleaned up newly uploaded images due to validation error.");
     }
     return {
       errors: validation.error.flatten().fieldErrors,
@@ -253,7 +250,6 @@ export async function updateProduct(
     // Si la actualización falla, eliminar solo las nuevas imágenes subidas.
     if (newImageUrls.length > 0) {
       await deleteProductImages(newImageUrls);
-      console.log("Cleaned up newly uploaded images due to API error.");
     }
     return {
       message: "Error al actualizar el producto.",
@@ -266,8 +262,6 @@ export async function updateProduct(
   redirect("/dashboard/products");
 }
 export async function deleteProductAction(productId: string) {
-  console.log(`[Server Action] Attempting to delete product ${productId}.`);
-
   const user = await getAuthenticatedUser();
   if (!user) {
     return {

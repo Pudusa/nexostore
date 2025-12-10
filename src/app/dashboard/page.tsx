@@ -2,8 +2,6 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const dynamic = 'force-dynamic';
-
 export default async function DashboardPage() {
   const user = await getAuthenticatedUser();
 

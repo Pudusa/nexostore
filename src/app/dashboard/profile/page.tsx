@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { ProfileForm } from "./_components/profile-form"; // Creamos un componente separado para el formulario
 
-export const dynamic = 'force-dynamic';
 
 // Función para obtener los datos del perfil del usuario desde el backend
 async function getUserProfile() {

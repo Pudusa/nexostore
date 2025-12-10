@@ -3,7 +3,6 @@ import ProductGrid from "@/components/product-grid";
 import { Suspense } from "react";
 import HomeSkeleton from "@/components/ui/home-skeleton";
 
-export const revalidate = 900; // Regenerar cada 15 minutos (900 segundos)
 
 // Componente server para obtener los productos iniciales
 async function InitialProductsFetcher() {

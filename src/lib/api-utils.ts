@@ -22,7 +22,7 @@ export const fetchWithTimeout = async (
 // Función para construir URL con parámetros de forma segura
 export const buildApiUrl = (endpoint: string, params?: Record<string, any>): string => {
   const url = new URL(endpoint, process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || 'http://localhost:3001');
-  
+
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {

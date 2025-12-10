@@ -39,21 +39,10 @@ export const getAuthenticatedApi = async () => {
 
 // --- Funciones de Productos ---
 
-// Agregaremos cacheo en memoria simple
-const productCache = new Map();
 
 export const getProducts = async (
   params?: PaginationParams & { includeOutOfStock?: boolean },
 ): Promise<PaginatedResponse<Product>> => {
-  // Crear una clave única para el cacheo basado en los parámetros
-  const cacheKey = `products_${JSON.stringify(params || {})}`;
-
-  // Verificar si ya existe en cache
-  const cached = productCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
   // Construir la URL con parámetros, asegurando valores predeterminados
   const url = buildApiUrl(`${API_BASE_URL}/products`, {
     ...params,
@@ -61,14 +50,17 @@ export const getProducts = async (
     offset: params?.offset ?? 0
   });
 
-  // Agregar headers para permitir cacheo
+  // Realizar la solicitud sin cacheo
   const response = await fetchWithTimeout(url, {
     method: 'GET',
     headers: {
-      'Cache-Control': 'public, max-age=3600',
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
-    next: { revalidate: 3600 } // ISR para Next.js
+    // Add cache option to prevent Next.js caching
+    cache: 'no-store',
   }, 15000); // 15 segundos de timeout
 
   if (!response.ok) {
@@ -77,28 +69,19 @@ export const getProducts = async (
 
   const data = await response.json();
 
-  // Almacenar en cache por 5 minutos
-  productCache.set(cacheKey, data);
-  setTimeout(() => productCache.delete(cacheKey), 300000); // Limpiar cache después de 5 minutos
-
   return data;
 };
 
 export const getProductById = async (id: string): Promise<Product> => {
-  // Verificar si ya existe en cache
-  const cacheKey = `product_${id}`;
-  const cached = productCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
   const response = await fetchWithTimeout(`${API_BASE_URL}/products/${id}`, {
     method: 'GET',
     headers: {
-      'Cache-Control': 'public, max-age=3600',
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
-    next: { revalidate: 3600 } // ISR para Next.js
+    cache: 'no-store',
   }, 10000); // 10 segundos de timeout
 
   if (!response.ok) {
@@ -106,10 +89,6 @@ export const getProductById = async (id: string): Promise<Product> => {
   }
 
   const data = await response.json();
-
-  // Almacenar en cache por 5 minutos
-  productCache.set(cacheKey, data);
-  setTimeout(() => productCache.delete(cacheKey), 300000); // Limpiar cache después de 5 minutos
 
   return data;
 };
@@ -119,6 +98,7 @@ export const createProduct = async (
 ): Promise<Product> => {
   const authApi = await getAuthenticatedApi();
   const response = await authApi.post("/products", productData);
+
   return response.data;
 };
 
@@ -128,6 +108,7 @@ export const updateProduct = async (
 ): Promise<Product> => {
   const authApi = await getAuthenticatedApi();
   const response = await authApi.patch(`/products/${id}`, productData);
+
   return response.data;
 };
 
@@ -139,6 +120,7 @@ export const updateProductStockStatus = async (
   const response = await authApi.patch(`/products/${productId}/stock`, {
     isOutOfStock,
   });
+
   return response.data;
 };
 
@@ -193,10 +175,12 @@ export const getRatingsSummary = async (productId: string): Promise<{ averageRat
   const response = await fetchWithTimeout(`${API_BASE_URL}/ratings/products/${productId}/summary`, {
     method: 'GET',
     headers: {
-      'Cache-Control': 'public, max-age=3600',
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
-    next: { revalidate: 3600 } // ISR para Next.js
+    cache: 'no-store',
   }, 8000); // 8 segundos de timeout
 
   if (!response.ok) {
@@ -211,10 +195,12 @@ export const getRatingsWithUsers = async (productId: string): Promise<any[]> => 
   const response = await fetchWithTimeout(`${API_BASE_URL}/ratings/products/${productId}`, {
     method: 'GET',
     headers: {
-      'Cache-Control': 'public, max-age=3600',
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
-    next: { revalidate: 3600 } // ISR para Next.js
+    cache: 'no-store',
   }, 8000); // 8 segundos de timeout
 
   if (!response.ok) {

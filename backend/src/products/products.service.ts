@@ -102,7 +102,7 @@ export class ProductsService {
     const totalPages = Math.ceil(totalItems / limit);
     const currentPage = Math.floor(offset / limit) + 1;
 
-    return {
+    const responseData = {
       data: products,
       totalItems,
       currentPage,
@@ -110,6 +110,8 @@ export class ProductsService {
       limit,
       offset,
     };
+
+    return responseData;
   }
 
   async findOne(id: string) {

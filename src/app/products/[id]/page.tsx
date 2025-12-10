@@ -18,7 +18,6 @@ import { RatingSummary } from "@/components/ratings/RatingSummary";
 import { CommentList } from "@/components/ratings/CommentList";
 import ProductPurchasePanel from '@/components/products/product-purchase-panel';
 
-export const dynamic = 'force-dynamic';
 
 interface ProductPageProps {
   params: {
