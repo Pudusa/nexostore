@@ -5,12 +5,42 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, ShoppingCart } from 'lucide-react';
+import { Trash2, ShoppingCart, Lock } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const { items, removeItem, updateQuantity } = useCartStore();
+
+  // Verificar si el usuario está autenticado
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      // Redirigir al login y guardar la URL actual para regresar después del login
+      router.push(`/login?callbackUrl=/cart`);
+    }
+  }, [status, router]);
+
+  // Mostrar un mensaje de carga o redirección si aún no se ha verificado la autenticación
+  if (status === 'loading') {
+    return (
+      <div className="container mx-auto max-w-4xl py-8 flex justify-center items-center">
+        <div className="text-center">
+          <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground mb-4 animate-spin" />
+          <p className="text-lg">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no está autenticado, no mostrar contenido adicional
+  if (status === 'unauthenticated') {
+    return null; // La redirección ya se hace en el useEffect
+  }
 
   const total = items.reduce(
     (acc, item) => acc + item.product.price * item.quantity,

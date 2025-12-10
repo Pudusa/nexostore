@@ -10,13 +10,13 @@ import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import ProductContact from "@/components/product-contact";
 import { StarRating } from "@/components/ui/star-rating";
 import { RatingForm } from "@/components/ratings/RatingForm";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RatingSummary } from "@/components/ratings/RatingSummary";
 import { CommentList } from "@/components/ratings/CommentList";
+import ProductPurchasePanel from '@/components/products/product-purchase-panel';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,9 +119,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 Este producto no está disponible actualmente.
               </p>
             </div>
-          ) : (
-            manager?.phone && user?.id !== manager.id && <ProductContact phone={manager.phone} />
-          )}
+          ) : null}
+
+          <div className="mt-4">
+            <ProductPurchasePanel product={product} />
+          </div>
         </div>
       </div>
       

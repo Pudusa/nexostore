@@ -1,7 +1,7 @@
 'use server';
 
 import { getAuthenticatedUser } from '@/lib/auth';
-import { api } from '@/lib/api';
+import { getAuthenticatedApi } from '@/lib/api';
 import { z } from 'zod';
 
 const createOrderSchema = z.object({
@@ -15,6 +15,19 @@ const createOrderSchema = z.object({
   customerPhone: z.string(),
 });
 
+// Verificar si las rutas del carrito están disponibles
+async function checkCartRoutesAvailability() {
+  try {
+    // Intentar hacer una solicitud de prueba a una ruta de carrito
+    const authApi = await getAuthenticatedApi();
+    // Solo verificamos la autenticación básica, no la ruta específica
+    return true;
+  } catch (error) {
+    console.error('Error checking cart routes availability:', error);
+    return false;
+  }
+}
+
 export async function createOrder(data: z.infer<typeof createOrderSchema>) {
   const user = await getAuthenticatedUser();
   if (!user) {
@@ -23,16 +36,79 @@ export async function createOrder(data: z.infer<typeof createOrderSchema>) {
 
   const validatedData = createOrderSchema.parse(data);
 
+  // Log de lo que se está enviando al backend
+  console.log('[FRONTEND - SEND TO BACKEND] - Datos del pedido a enviar:', {
+    userId: user.id,
+    items: validatedData.items,
+    shippingAddress: validatedData.shippingAddress,
+    customerPhone: validatedData.customerPhone,
+    timestamp: new Date().toISOString()
+  });
+
   try {
-    await api('/orders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(validatedData),
+    const authApi = await getAuthenticatedApi();
+
+    const cartRoutesAvailable = true; // Asumimos que las rutas están disponibles
+
+    if (cartRoutesAvailable && validatedData.items && validatedData.items.length > 0) {
+      // Add each item to the server cart (cart/add will create a cart if missing)
+      for (const it of validatedData.items) {
+        try {
+          // Log de lo que se envía al endpoint /cart/add
+          console.log('[FRONTEND - SEND TO BACKEND] - Enviando al carrito:', {
+            userId: user.id,
+            productId: it.productId,
+            quantity: it.quantity,
+            timestamp: new Date().toISOString()
+          });
+
+          const response = await authApi.post('/cart/add', { productId: it.productId, quantity: it.quantity });
+
+          // Log de la respuesta del backend para /cart/add
+          console.log('[BACKEND RESPONSE] - Respuesta de /cart/add:', {
+            userId: user.id,
+            productId: it.productId,
+            responseStatus: response.status,
+            responseData: response.data,
+            timestamp: new Date().toISOString()
+          });
+
+        } catch (err) {
+          console.error('Failed to sync cart item to server:', err);
+          // Continuar con el proceso de checkout incluso si falla la sincronización
+        }
+      }
+    }
+
+    // Log para el endpoint de checkout
+    console.log('[FRONTEND - SEND TO BACKEND] - Enviando a /cart/checkout:', {
+      userId: user.id,
+      shippingAddress: validatedData.shippingAddress,
+      customerPhone: validatedData.customerPhone,
+      timestamp: new Date().toISOString()
+    });
+
+    // Call checkout (server will create Order from persisted cart and then clear it)
+    const response = await authApi.post('/cart/checkout', {
+      shippingAddress: validatedData.shippingAddress,
+      customerPhone: validatedData.customerPhone
+    });
+
+    // Log de la respuesta del backend para /cart/checkout
+    console.log('[BACKEND RESPONSE] - Respuesta de /cart/checkout:', {
+      userId: user.id,
+      responseStatus: response.status,
+      responseData: response.data,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Failed to create order:', error);
+    console.error('[ORDER CREATION ERROR] - Error al crear el pedido:', {
+      userId: user.id,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : null,
+      timestamp: new Date().toISOString()
+    });
+
     throw new Error('No se pudo crear el pedido.');
   }
 }

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { register } from "@/lib/auth";
+import { registerAction } from "@/app/actions/register-actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
@@ -56,7 +56,7 @@ export default function RegisterForm() {
     }
   };
 
-  const handleRegister = (data: RegisterFormValues) => {
+  const onSubmit = async (data: RegisterFormValues) => {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("email", data.email);
@@ -64,13 +64,22 @@ export default function RegisterForm() {
     formData.append("phone", data.phone || "");
     formData.append("phoneCountry", data.phoneCountry);
     formData.append("confirmPassword", data.confirmPassword);
-    register(formData);
+
+    const result = await registerAction({}, formData);
+
+    if (result.success) {
+      // Redirigir al login después del registro exitoso
+      window.location.href = '/login';
+    } else {
+      // Mostrar error
+      console.error(result.message);
+    }
   };
 
   return (
     <Card className="w-full max-w-sm">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleRegister)}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardHeader>
             <CardTitle className="text-2xl">Crear una Cuenta</CardTitle>
             <CardDescription>

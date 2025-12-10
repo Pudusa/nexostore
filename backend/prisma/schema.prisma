@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "../node_modules/.prisma/client"
@@ -12,20 +9,20 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  name      String
-  email     String    @unique
-  password  String
-  role      Role      @default(client)
-  phone     String
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  password     String
+  role         Role      @default(client)
+  phone        String
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   phoneCountry String
-  avatarUrl String?
-  products  Product[]
-  orders    Order[]
-  ratings   Rating[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  cart         Cart?
+  orders       Order[]
+  products     Product[]
+  ratings      Rating[]
 }
 
 model Product {
@@ -33,79 +30,99 @@ model Product {
   name          String
   description   String
   price         Float
-  isOutOfStock  Boolean        @default(false)
+  managerId     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   coverImage    String?
-  images        ProductImage[] // Reemplaza imageUrls por una relación a ProductImage
+  isOutOfStock  Boolean        @default(false)
   averageRating Float          @default(0)
   ratingCount   Int            @default(0)
-  ratings       Rating[]
+  cartItems     CartItem[]
   orderItems    OrderItem[]
-
-  manager   User   @relation(fields: [managerId], references: [id], onDelete: Cascade)
-  managerId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  manager       User           @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  images        ProductImage[]
+  ratings       Rating[]
 }
 
 model ProductImage {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   url       String
-  isCover   Boolean @default(false) // Nuevo campo para la imagen de portada
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
-
   createdAt DateTime @default(now())
+  isCover   Boolean  @default(false)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  total           Float
+  status          OrderStatus @default(PENDING)
+  shippingAddress String
+  customerPhone   String
+  customerId      String
+  customer        User        @relation(fields: [customerId], references: [id])
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id        String        @id @default(cuid())
+  quantity  Int
+  price     Float
+  status    OrderItemStatus @default(PENDING) // Nuevo campo para estado individual por producto
+  orderId   String
+  productId String
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product       @relation(fields: [productId], references: [id])
+}
+
+enum OrderItemStatus {
+  PENDING    // Pendiente de confirmación
+  CONFIRMED  // Confirmado por el vendedor
+  PREPARING  // En preparación
+  SHIPPED    // Enviado
+  DELIVERED  // Entregado
+  CANCELLED  // Cancelado
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  price     Float
+  cartId    String
+  productId String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  productId String
+  comment   String?
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
 }
 
 enum Role {
   admin
   manager
   client
-}
-
-model Order {
-  id              String      @id @default(cuid())
-  total           Float
-  status          OrderStatus @default(PENDING)
-  shippingAddress String
-  customerPhone   String
-
-  customer   User   @relation(fields: [customerId], references: [id])
-  customerId String
-
-  items OrderItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model OrderItem {
-  id        String  @id @default(cuid())
-  quantity  Int
-  price     Float
-
-  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId String
-
-  product   Product @relation(fields: [productId], references: [id])
-  productId String
-}
-
-model Rating {
-  id        String   @id @default(cuid())
-  rating    Int      // El valor de la valoración, ej: 1 a 5
-  comment   String?  // Comentario opcional del usuario
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String
-
-  @@unique([userId, productId]) // <-- RESTRICCIÓN CLAVE: Un usuario solo puede valorar un producto una vez.
 }
 
 enum OrderStatus {

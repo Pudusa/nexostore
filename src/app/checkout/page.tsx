@@ -19,7 +19,9 @@ import {
 import { createOrder } from '@/app/actions/order-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
+import { ShoppingCart } from 'lucide-react';
 
 const checkoutSchema = z.object({
   shippingAddress: z.string().min(10, 'La dirección debe tener al menos 10 caracteres.'),
@@ -29,15 +31,44 @@ const checkoutSchema = z.object({
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
 export default function CheckoutPage() {
-  const [orderPlaced, setOrderPlaced] = useState(false);
-  const { items, total, clearCart } = useCartStore(state => ({
-    items: state.items,
-    total: state.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0),
-    clearCart: state.clearCart,
-  }));
-  
-  const { toast } = useToast();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const items = useCartStore(state => state.items);
+  const clearCart = useCartStore(state => state.clearCart);
+
+  // Verificar si el usuario está autenticado
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      // Redirigir al login y guardar la URL actual para regresar después del login
+      router.push(`/login?callbackUrl=/checkout`);
+    }
+  }, [status, router]);
+
+  // Mostrar un mensaje de carga o redirección si aún no se ha verificado la autenticación
+  if (status === 'loading') {
+    return (
+      <div className="container mx-auto max-w-4xl py-8 flex justify-center items-center">
+        <div className="text-center">
+          <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground mb-4 animate-spin" />
+          <p className="text-lg">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no está autenticado, no mostrar contenido adicional
+  if (status === 'unauthenticated') {
+    return null; // La redirección ya se hace en el useEffect
+  }
+
+  // Calcular el total de forma eficiente con useMemo para evitar cálculos innecesarios
+  const total = useMemo(() =>
+    items.reduce((acc, item) => acc + item.product.price * item.quantity, 0),
+    [items]
+  );
+
+  const { toast } = useToast();
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -46,13 +77,13 @@ export default function CheckoutPage() {
       customerPhone: '',
     },
   });
-  
+
   // Redirect to home if cart is empty and order has not been placed
-  useEffect(() => {
-    if (items.length === 0 && !orderPlaced) {
-      router.replace('/');
-    }
-  }, [items, router, orderPlaced]);
+  // useEffect(() => {
+  //   if (items.length === 0 && !orderPlaced) {
+  //     router.replace('/');
+  //   }
+  // }, [items, router, orderPlaced]);
 
   const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -65,7 +96,7 @@ export default function CheckoutPage() {
         productId: item.product.id,
         quantity: item.quantity,
       }));
-      
+
       await createOrder({
         ...data,
         items: orderItems,
@@ -75,7 +106,7 @@ export default function CheckoutPage() {
         title: '¡Pedido realizado!',
         description: 'Tu pedido ha sido creado exitosamente. El vendedor se pondrá en contacto contigo.',
       });
-      
+
       setOrderPlaced(true);
       clearCart();
       router.push('/order-confirmation');

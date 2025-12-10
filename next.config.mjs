@@ -35,6 +35,8 @@ const nextConfig = {
       },
     ],
   },
+  // Server Actions es ahora opcional y ya no necesita configuración experimental
+  // Eliminamos hostname ya que no es una opción válida
 };
 
 export default nextConfig;

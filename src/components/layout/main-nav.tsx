@@ -24,6 +24,21 @@ export default function MainNav({ user }: MainNavProps) {
       label: "Gestión de Usuarios",
       roles: ["admin"],
     },
+    {
+      href: "/dashboard/transactions",
+      label: "Transacciones",
+      roles: ["admin"],
+    },
+    {
+      href: "/dashboard/my-orders",
+      label: "Mis Pedidos",
+      roles: ["client", "manager", "admin"], // Todos los usuarios pueden ver sus pedidos
+    },
+    {
+      href: "/dashboard/manager-orders",
+      label: "Encargos",
+      roles: ["manager"], // Solo managers pueden ver pedidos de sus productos
+    },
   ];
 
   const userRole = user?.role || "client";

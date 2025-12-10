@@ -1,12 +1,14 @@
 'use client';
 
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCartStore } from '@/stores/use-cart-store';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 export function CartNav() {
+  const { data: session, status } = useSession();
   const { items } = useCartStore();
   const [isClient, setIsClient] = useState(false);
 
@@ -15,8 +17,13 @@ export function CartNav() {
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
+
   const totalItems = isClient ? items.reduce((acc, item) => acc + item.quantity, 0) : 0;
+
+    // No mostrar nada si no está autenticado
+  if (status === 'unauthenticated') {
+    return null;
+  }
 
   return (
     <Button asChild variant="ghost" size="icon" aria-label="Ver carrito de compras">

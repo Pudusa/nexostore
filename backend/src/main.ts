@@ -31,17 +31,41 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'public'));
 
   const isProduction = process.env.NODE_ENV === 'production';
-  const frontendUrl = isProduction
+  let corsOrigin = isProduction
     ? process.env.FRONTEND_URL_PROD
     : process.env.FRONTEND_URL_LOCAL;
 
-  logger.log(`CORS enabled for origin: ${frontendUrl}`);
-
-  app.enableCors({
-    origin: frontendUrl,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-  });
+  // Para desarrollo local, permitir múltiples orígenes si FRONTEND_URL_LOCAL contiene una lista separada por comas
+  if (!isProduction && corsOrigin) {
+    const origins = corsOrigin.split(',').map(origin => origin.trim());
+    // Si hay múltiples orígenes, usar la función para verificar origen
+    if (origins.length > 1) {
+      app.enableCors({
+        origin: (origin, callback) => {
+          if (origins.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        },
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true,
+      });
+    } else {
+      app.enableCors({
+        origin: origins[0], // Tomar el primer origen si solo hay uno
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true,
+      });
+    }
+  } else {
+    // En producción, usar solo un origen
+    app.enableCors({
+      origin: corsOrigin || 'http://localhost:3000', // Valor por defecto
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      credentials: true,
+    });
+  }
 
   app.use(loggerMiddleware);
 

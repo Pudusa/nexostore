@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="EditMigrationStateService">
+    <pendingWorkingSetItems>
+      <entry key="ba5d2c79-05f8-4902-8013-311f5f732fd0">
+        <set>
+          <option value="file://$PROJECT_DIR$/backend/src/products/products.module.ts" />
+          <option value="file://$PROJECT_DIR$/backend/src/orders/orders.module.ts" />
+        </set>
+      </entry>
+    </pendingWorkingSetItems>
+  </component>
+</project>

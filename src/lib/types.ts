@@ -11,8 +11,9 @@ export interface Product {
   coverImage?: string | null;
   managerId: string;
   manager: User;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  isOutOfStock: boolean;
 }
 
 export interface Image {
@@ -24,18 +25,31 @@ export interface Image {
   updatedAt: string;
 }
 
+export interface ProductImage {
+  id: string;
+  url: string;
+  isCover: boolean;
+  productId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface User {
   id: string;
-  name: string;
-  email: string;
+  name: string | null;
+  email: string | null;
+  image?: string | null;
   phone?: string | null;
+  phoneCountry?: string;
   role: Role;
-  createdAt: string;
-  updatedAt: string;
+  apiToken?: string;
+  avatarUrl: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 export enum Role {
-  customer = "customer",
+  client = "client",
   manager = "manager",
   admin = "admin",
 }
@@ -43,6 +57,15 @@ export enum Role {
 export interface PaginationParams {
   limit?: number;
   offset?: number;
+}
+
+export interface GetUsersDto {
+  page?: string;
+  limit?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  role?: string;
 }
 
 export interface PaginatedResponse<T> {

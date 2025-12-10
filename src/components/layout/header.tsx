@@ -6,6 +6,7 @@ import MainNav from "./main-nav";
 import MobileNav from "./mobile-nav";
 import UserNav from "../user-nav";
 import { authOptions } from "@/lib/auth";
+import { CartNav } from "./cart-nav";
 
 export default async function Header() {
   const session = await getServerSession(authOptions);
@@ -20,6 +21,7 @@ export default async function Header() {
         <MainNav user={user} />
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
+            <CartNav />
             {user ? (
               <UserNav />
             ) : (

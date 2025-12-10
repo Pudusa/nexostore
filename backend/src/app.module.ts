@@ -12,6 +12,8 @@ import { LoggerMiddleware } from './logger.middleware';
 import { ThrottlerGuard, ThrottlerModule, seconds } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { RatingsModule } from './ratings/ratings.module';
+import { OrdersModule } from './orders/orders.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { RatingsModule } from './ratings/ratings.module';
     UploadModule,
     SupabaseModule,
     RatingsModule,
+    OrdersModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [
