@@ -39,8 +39,6 @@ export const getAuthenticatedApi = async () => {
 
 // --- Funciones de Productos ---
 
-import { fetchWithTimeout, buildApiUrl } from './api-utils';
-
 // Agregaremos cacheo en memoria simple
 const productCache = new Map();
 
