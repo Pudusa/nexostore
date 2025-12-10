@@ -31,6 +31,9 @@ export default function ProductCard({ product }: ProductCardProps) {
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               data-ai-hint="product image"
+              loading="lazy"
+              placeholder="blur"
+              blurDataURL={product.coverImage || (product.images && product.images.length > 0 ? product.images[0].url : '/placeholder.png')}
             />
           </div>
         </CardHeader>

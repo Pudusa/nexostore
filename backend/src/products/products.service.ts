@@ -59,8 +59,19 @@ export class ProductsService {
     const [products, totalItems] = await this.prisma.$transaction([
       this.prisma.product.findMany({
         where: whereCondition,
-        include: {
-          images: true,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          price: true,
+          averageRating: true,
+          ratingCount: true,
+          coverImage: true,
+          isOutOfStock: true,
+          createdAt: true,
+          updatedAt: true,
+          managerId: true,
+          // Solo seleccionar los campos necesarios para mejorar rendimiento
           manager: {
             select: {
               id: true,
@@ -68,9 +79,20 @@ export class ProductsService {
               phone: true,
             },
           },
+          images: {
+            select: {
+              id: true,
+              url: true,
+              isCover: true,
+            },
+            take: 10, // Limitar número de imágenes para evitar exceso de datos
+          }
         },
         take: limit,
         skip: offset,
+        orderBy: {
+          createdAt: 'desc', // Añadir ordenamiento para consistencia
+        },
       }),
       this.prisma.product.count({
         where: whereCondition,
@@ -93,8 +115,18 @@ export class ProductsService {
   async findOne(id: string) {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      include: {
-        images: true,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        averageRating: true,
+        ratingCount: true,
+        coverImage: true,
+        isOutOfStock: true,
+        createdAt: true,
+        updatedAt: true,
+        managerId: true,
         manager: {
           select: {
             id: true,
@@ -102,6 +134,14 @@ export class ProductsService {
             phone: true,
           },
         },
+        images: {
+          select: {
+            id: true,
+            url: true,
+            isCover: true,
+            createdAt: true,
+          },
+        }
       },
     });
     if (!product) {

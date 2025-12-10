@@ -9,6 +9,7 @@ import { authOptions } from "@/lib/auth";
 import { CartNav } from "./cart-nav";
 
 export default async function Header() {
+  // Obtener la sesión de forma eficiente
   const session = await getServerSession(authOptions);
   const user = session?.user;
 

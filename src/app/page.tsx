@@ -1,26 +1,24 @@
 import { getProducts } from "@/lib/api";
-import ProductCard from "@/components/product-card";
+import ProductGrid from "@/components/product-grid";
+import { Suspense } from "react";
+import HomeSkeleton from "@/components/ui/home-skeleton";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 900; // Regenerar cada 15 minutos (900 segundos)
 
-export default async function Home() {
-  const products = await getProducts();
+// Componente server para obtener los productos iniciales
+async function InitialProductsFetcher() {
+  const initialProducts = await getProducts({
+    limit: 8, // Reducir a 8 productos inicialmente para mejorar la carga
+    offset: 0,
+  });
 
+  return <ProductGrid initialProducts={initialProducts.data} />;
+}
+
+export default function Home() {
   return (
-    <div className="container py-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-          Catálogo de Productos
-        </h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Explora nuestra colección de productos únicos.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {products.data.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
-    </div>
+    <Suspense fallback={<HomeSkeleton />}>
+      <InitialProductsFetcher />
+    </Suspense>
   );
 }

@@ -30,7 +30,7 @@ model Product {
   name          String
   description   String
   price         Float
-  managerId     String
+  managerId     String         @db.VarChar(255)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   coverImage    String?
@@ -42,6 +42,11 @@ model Product {
   manager       User           @relation(fields: [managerId], references: [id], onDelete: Cascade)
   images        ProductImage[]
   ratings       Rating[]
+
+  @@index([managerId])
+  @@index([isOutOfStock])
+  @@index([createdAt])
+  @@index([averageRating])
 }
 
 model ProductImage {

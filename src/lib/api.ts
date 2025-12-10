@@ -2,6 +2,7 @@
 import axios from "axios";
 import { API_BASE_URL } from "./config";
 import type { Product, User, PaginationParams, PaginatedResponse } from "./types";
+import { fetchWithTimeout, buildApiUrl } from './api-utils';
 
 /**
  * Instancia de Axios para llamadas a la API pública.
@@ -38,16 +39,81 @@ export const getAuthenticatedApi = async () => {
 
 // --- Funciones de Productos ---
 
+import { fetchWithTimeout, buildApiUrl } from './api-utils';
+
+// Agregaremos cacheo en memoria simple
+const productCache = new Map();
+
 export const getProducts = async (
   params?: PaginationParams & { includeOutOfStock?: boolean },
 ): Promise<PaginatedResponse<Product>> => {
-  const response = await api.get("/products", { params });
-  return response.data;
+  // Crear una clave única para el cacheo basado en los parámetros
+  const cacheKey = `products_${JSON.stringify(params || {})}`;
+
+  // Verificar si ya existe en cache
+  const cached = productCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // Construir la URL con parámetros, asegurando valores predeterminados
+  const url = buildApiUrl(`${API_BASE_URL}/products`, {
+    ...params,
+    limit: params?.limit ?? 8,
+    offset: params?.offset ?? 0
+  });
+
+  // Agregar headers para permitir cacheo
+  const response = await fetchWithTimeout(url, {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'public, max-age=3600',
+      'Content-Type': 'application/json',
+    },
+    next: { revalidate: 3600 } // ISR para Next.js
+  }, 15000); // 15 segundos de timeout
+
+  if (!response.ok) {
+    throw new Error(`Error al obtener productos: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  // Almacenar en cache por 5 minutos
+  productCache.set(cacheKey, data);
+  setTimeout(() => productCache.delete(cacheKey), 300000); // Limpiar cache después de 5 minutos
+
+  return data;
 };
 
 export const getProductById = async (id: string): Promise<Product> => {
-  const response = await api.get(`/products/${id}`);
-  return response.data;
+  // Verificar si ya existe en cache
+  const cacheKey = `product_${id}`;
+  const cached = productCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const response = await fetchWithTimeout(`${API_BASE_URL}/products/${id}`, {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'public, max-age=3600',
+      'Content-Type': 'application/json',
+    },
+    next: { revalidate: 3600 } // ISR para Next.js
+  }, 10000); // 10 segundos de timeout
+
+  if (!response.ok) {
+    throw new Error(`Error al obtener producto: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  // Almacenar en cache por 5 minutos
+  productCache.set(cacheKey, data);
+  setTimeout(() => productCache.delete(cacheKey), 300000); // Limpiar cache después de 5 minutos
+
+  return data;
 };
 
 export const createProduct = async (
@@ -126,13 +192,39 @@ export const submitRating = async (productId: string, value: number, comment?: s
 };
 
 export const getRatingsSummary = async (productId: string): Promise<{ averageRating: number; totalRatings: number; ratingsCount: any; }> => {
-  const response = await api.get(`/ratings/products/${productId}/summary`);
-  return response.data;
+  const response = await fetchWithTimeout(`${API_BASE_URL}/ratings/products/${productId}/summary`, {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'public, max-age=3600',
+      'Content-Type': 'application/json',
+    },
+    next: { revalidate: 3600 } // ISR para Next.js
+  }, 8000); // 8 segundos de timeout
+
+  if (!response.ok) {
+    throw new Error(`Error al obtener resumen de valoraciones: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
 };
 
 export const getRatingsWithUsers = async (productId: string): Promise<any[]> => {
-  const response = await api.get(`/ratings/products/${productId}`);
-  return response.data;
+  const response = await fetchWithTimeout(`${API_BASE_URL}/ratings/products/${productId}`, {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'public, max-age=3600',
+      'Content-Type': 'application/json',
+    },
+    next: { revalidate: 3600 } // ISR para Next.js
+  }, 8000); // 8 segundos de timeout
+
+  if (!response.ok) {
+    throw new Error(`Error al obtener valoraciones con usuarios: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
 };
 
 export const getUsers = async (
