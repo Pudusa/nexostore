@@ -60,10 +60,10 @@ export async function createOrder(data: z.infer<typeof createOrderSchema>) {
       customerPhone: validatedData.customerPhone
     });
 
-    });
+    return response.data;
   } catch (error) {
     console.error('[ORDER CREATION ERROR] - Error al crear el pedido:', {
-      userId: user.id,
+      userId: user?.id || 'unknown',
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : null,
       timestamp: new Date().toISOString()
