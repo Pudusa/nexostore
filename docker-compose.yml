@@ -1,0 +1,7 @@
+version: '3.8'
+
+services:
+  # Redis service removed - using Upstash Redis instead
+  # Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables
+
+volumes:
