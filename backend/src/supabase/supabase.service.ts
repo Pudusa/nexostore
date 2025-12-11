@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 
 @Injectable()
 export class SupabaseService {
