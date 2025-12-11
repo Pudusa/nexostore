@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
-import sharp from 'sharp';
+import * as sharp from 'sharp';
 
 @Injectable()
 export class SupabaseService {
@@ -51,6 +51,34 @@ export class SupabaseService {
 
     return {
       originalname: file.originalname,
+      publicUrl: data.publicUrl,
+    };
+  }
+
+  async uploadFileFromBuffer(
+    buffer: Buffer,
+    fileName: string,
+    bucket: string = 'product-images',
+    contentType: string = 'image/webp',
+  ): Promise<{ publicUrl: string }> {
+    const { error } = await this.supabase.storage
+      .from(bucket)
+      .upload(fileName, buffer, {
+        contentType,
+        upsert: false,
+      });
+
+    if (error) {
+      throw new InternalServerErrorException(
+        `Error uploading file to Supabase: ${error.message}`,
+      );
+    }
+
+    const { data } = this.supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return {
       publicUrl: data.publicUrl,
     };
   }
