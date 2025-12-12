@@ -78,6 +78,18 @@ export default function ManagerOrdersPage() {
 
       // Usar la API del servidor para obtener los pedidos de productos gestionados
       const response = await fetch('/api/orders/managed');
+
+      if (response.status === 401) {
+        // Si recibimos un 401, la sesión ha expirado, cerrar sesión y redirigir
+        import('next-auth/react').then(async (nextauth) => {
+          await nextauth.signOut({
+            callbackUrl: '/login?expired=true',
+            redirect: true
+          });
+        });
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         // Manejar diferentes posibles formatos de respuesta
@@ -98,11 +110,21 @@ export default function ManagerOrdersPage() {
       }
     } catch (error) {
       console.error('Error fetching manager orders:', error);
-      toast({
-        title: 'Error al cargar pedidos',
-        description: 'Hubo un problema al cargar los pedidos. Por favor, intenta de nuevo.',
-        variant: 'destructive',
-      });
+      // Si hay un error de autenticación, cerrar sesión y redirigir
+      if (error instanceof Error && error.message.includes('expired')) {
+        import('next-auth/react').then(async (nextauth) => {
+          await nextauth.signOut({
+            callbackUrl: '/login?expired=true',
+            redirect: true
+          });
+        });
+      } else {
+        toast({
+          title: 'Error al cargar pedidos',
+          description: 'Hubo un problema al cargar los pedidos. Por favor, intenta de nuevo.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }

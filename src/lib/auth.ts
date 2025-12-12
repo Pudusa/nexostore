@@ -111,7 +111,39 @@ export const getAuthenticatedUser = async () => {
     return null; // La sesión ha expirado
   }
 
+  // Verificar si el token JWT ha expirado
+  const token = session?.user?.apiToken;
+  if (token && isTokenExpired(token)) {
+    return null; // El token JWT ha expirado
+  }
+
   return session?.user ?? null;
+};
+
+// Función para verificar si un token JWT ha expirado
+const isTokenExpired = (token: string): boolean => {
+  try {
+    // Dividir el token para obtener el payload
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+
+    const payload = JSON.parse(jsonPayload);
+    const currentTime = Date.now() / 1000; // Convertir a segundos
+
+    // Si expira en menos de 5 minutos, considerarlo como expirado para prevenir problemas
+    return payload.exp < currentTime + 300; // 300 segundos = 5 minutos
+  } catch (error) {
+    console.error("Error decoding JWT token:", error);
+    return true; // Si no podemos decodificarlo, asumir que está expirado o inválido
+  }
 };
 
 export const register = async (formData: FormData) => {

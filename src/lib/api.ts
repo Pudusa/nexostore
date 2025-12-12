@@ -26,6 +26,13 @@ export const getAuthenticatedApi = async () => {
   const session = await getServerSession(authOptions);
   const token = session?.user?.apiToken;
 
+  // Verificar si el token JWT es válido antes de usarlo
+  if (token && isTokenExpired(token)) {
+    console.error("JWT token has expired");
+    // Lanzar error específico para que pueda ser manejado por las funciones que lo llaman
+    throw new Error("JWT token has expired");
+  }
+
   const authenticatedApi = axios.create({
     baseURL: API_BASE_URL,
   });
@@ -34,7 +41,46 @@ export const getAuthenticatedApi = async () => {
     authenticatedApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   }
 
+  // Agregar interceptor para manejar respuestas 401 automáticamente
+  authenticatedApi.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      if (error.response?.status === 401) {
+        // Token probablemente expirado, podría intentar cerrar sesión aquí
+        console.error("Token expired or invalid");
+        // No lanzar el error aquí sino pasar directamente al siguiente middleware
+      }
+      return Promise.reject(error);
+    }
+  );
+
   return authenticatedApi;
+};
+
+// Función para verificar si un token JWT ha expirado
+const isTokenExpired = (token: string): boolean => {
+  try {
+    // Dividir el token para obtener el payload
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+
+    const payload = JSON.parse(jsonPayload);
+    const currentTime = Date.now() / 1000; // Convertir a segundos
+
+    // Si expira en menos de 5 minutos, considerarlo como expirado para prevenir problemas
+    return payload.exp < currentTime + 300; // 300 segundos = 5 minutos
+  } catch (error) {
+    console.error("Error decoding JWT token:", error);
+    return true; // Si no podemos decodificarlo, asumir que está expirado o inválido
+  }
 };
 
 // --- Funciones de Productos ---
