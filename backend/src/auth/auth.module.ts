@@ -9,11 +9,13 @@ import { JwtStrategy } from './jwt.strategy';
 import { Reflector } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RefreshTokenService } from './refresh-token.service';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
+    PrismaModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

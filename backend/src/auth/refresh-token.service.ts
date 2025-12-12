@@ -15,7 +15,7 @@ export class RefreshTokenService {
   async createRefreshToken(userId: string, userAgent?: string): Promise<{ token: string; expiresAt: Date }> {
     const token = uuidv4();
     const hashedToken = await bcrypt.hash(token, 10);
-    
+
     // Refresh tokens will expire in 7 days
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
@@ -35,11 +35,9 @@ export class RefreshTokenService {
   }
 
   async findValidRefreshToken(token: string): Promise<{ refreshToken: any; user: User }> {
-    const hashedToken = await bcrypt.hash(token, 10);
-
-    const refreshToken = await this.prisma.refreshToken.findFirst({
+    // First, fetch all potentially matching tokens to verify against the provided token
+    const candidateTokens = await this.prisma.refreshToken.findMany({
       where: {
-        token: hashedToken,
         isRevoked: false,
         expiresAt: {
           gte: new Date(), // Greater than or equal to current date (not expired)
@@ -50,23 +48,40 @@ export class RefreshTokenService {
       }
     });
 
-    if (!refreshToken) {
-      throw new UnauthorizedException('Invalid refresh token');
+    // Find the matching token by comparing the provided token with stored hashed tokens
+    for (const refreshTokenRecord of candidateTokens) {
+      const isValid = await bcrypt.compare(token, refreshTokenRecord.token);
+      if (isValid) {
+        return {
+          refreshToken: refreshTokenRecord,
+          user: refreshTokenRecord.user
+        };
+      }
     }
 
-    return {
-      refreshToken,
-      user: refreshToken.user
-    };
+    throw new UnauthorizedException('Invalid refresh token');
   }
 
   async revokeToken(token: string): Promise<void> {
-    const hashedToken = await bcrypt.hash(token, 10);
-    
-    await this.prisma.refreshToken.update({
-      where: { token: hashedToken },
-      data: { isRevoked: true }
+    // Find the token by comparing with all unrevoked tokens
+    const allRefreshTokens = await this.prisma.refreshToken.findMany({
+      where: {
+        isRevoked: false
+      }
     });
+
+    for (const refreshTokenRecord of allRefreshTokens) {
+      const isValid = await bcrypt.compare(token, refreshTokenRecord.token);
+      if (isValid) {
+        await this.prisma.refreshToken.update({
+          where: { id: refreshTokenRecord.id },
+          data: { isRevoked: true }
+        });
+        return;
+      }
+    }
+
+    throw new UnauthorizedException('Token not found');
   }
 
   async revokeAllUserTokens(userId: string): Promise<void> {
