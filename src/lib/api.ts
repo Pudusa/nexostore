@@ -3,6 +3,9 @@ import axios from "axios";
 import { API_BASE_URL } from "./config";
 import type { Product, User, PaginationParams, PaginatedResponse } from "./types";
 import { fetchWithTimeout, buildApiUrl } from './api-utils';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./auth";
+import { signIn } from "next-auth/react";
 
 /**
  * Instancia de Axios para llamadas a la API pública.
@@ -11,51 +14,6 @@ import { fetchWithTimeout, buildApiUrl } from './api-utils';
 export const api = axios.create({
   baseURL: API_BASE_URL,
 });
-
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "./auth";
-
-/**
- * Función para obtener una instancia de Axios configurada con el token de autenticación.
- * Esta función se debe usar en el LADO DEL SERVIDOR (Server Actions, Route Handlers)
- * para realizar llamadas autenticadas a la API del backend.
- *
- * @returns Una instancia de Axios con el encabezado de autorización.
- */
-export const getAuthenticatedApi = async () => {
-  const session = await getServerSession(authOptions);
-  const token = session?.user?.apiToken;
-
-  // Verificar si el token JWT es válido antes de usarlo
-  if (token && isTokenExpired(token)) {
-    console.error("JWT token has expired");
-    // Lanzar error específico para que pueda ser manejado por las funciones que lo llaman
-    throw new Error("JWT token has expired");
-  }
-
-  const authenticatedApi = axios.create({
-    baseURL: API_BASE_URL,
-  });
-
-  if (token) {
-    authenticatedApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  }
-
-  // Agregar interceptor para manejar respuestas 401 automáticamente
-  authenticatedApi.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      if (error.response?.status === 401) {
-        // Token probablemente expirado, podría intentar cerrar sesión aquí
-        console.error("Token expired or invalid");
-        // No lanzar el error aquí sino pasar directamente al siguiente middleware
-      }
-      return Promise.reject(error);
-    }
-  );
-
-  return authenticatedApi;
-};
 
 // Función para verificar si un token JWT ha expirado
 const isTokenExpired = (token: string): boolean => {
@@ -81,6 +39,93 @@ const isTokenExpired = (token: string): boolean => {
     console.error("Error decoding JWT token:", error);
     return true; // Si no podemos decodificarlo, asumir que está expirado o inválido
   }
+};
+
+// Función para refrescar el token JWT
+const refreshAccessToken = async (refreshToken: string) => {
+  try {
+    const response = await api.post('/auth/refresh', {
+      refresh_token: refreshToken,
+    });
+
+    if (response.data?.access_token) {
+      // Actualizar el token en la sesión
+      return response.data;
+    }
+  } catch (error) {
+    console.error('Error refreshing access token:', error);
+    throw error;
+  }
+};
+
+/**
+ * Función para obtener una instancia de Axios configurada con el token de autenticación.
+ * Esta función se debe usar en el LADO DEL SERVIDOR (Server Actions, Route Handlers)
+ * para realizar llamadas autenticadas a la API del backend.
+ *
+ * @returns Una instancia de Axios con el encabezado de autorización.
+ */
+export const getAuthenticatedApi = async () => {
+  const session = await getServerSession(authOptions);
+  let token = session?.user?.apiToken;
+  const refreshToken = session?.user?.refreshToken;
+
+  // Verificar si el token JWT es válido antes de usarlo
+  if (token && isTokenExpired(token)) {
+    // Si el token está expirado y tenemos un refresh token, intentar refrescar
+    if (refreshToken) {
+      try {
+        const refreshedTokens = await refreshAccessToken(refreshToken);
+        token = refreshedTokens.access_token;
+        // En el servidor, no podemos actualizar directamente la sesión
+        // pero al menos usamos el nuevo token
+      } catch (error) {
+        console.error("Failed to refresh token:", error);
+        throw new Error("JWT token has expired and could not be refreshed");
+      }
+    } else {
+      console.error("JWT token has expired and no refresh token available");
+      throw new Error("JWT token has expired");
+    }
+  }
+
+  const authenticatedApi = axios.create({
+    baseURL: API_BASE_URL,
+  });
+
+  if (token) {
+    authenticatedApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }
+
+  // Agregar interceptor para manejar respuestas 401 automáticamente
+  authenticatedApi.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      if (error.response?.status === 401) {
+        // Token probablemente expirado, intentar refrescar si es posible
+        const session = await getServerSession(authOptions);
+        const refreshToken = session?.user?.refreshToken;
+
+        if (refreshToken) {
+          try {
+            const refreshedTokens = await refreshAccessToken(refreshToken);
+            // Actualizar el encabezado de autorización con el nuevo token
+            error.response.config.headers['Authorization'] = `Bearer ${refreshedTokens.access_token}`;
+            // Reintentar la solicitud original
+            return authenticatedApi.request(error.response.config);
+          } catch (refreshError) {
+            console.error("Could not refresh token:", refreshError);
+          }
+        }
+
+        // Si el refresh falla, lanzar el error original
+        console.error("Token expired or invalid");
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  return authenticatedApi;
 };
 
 // --- Funciones de Productos ---

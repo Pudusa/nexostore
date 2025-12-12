@@ -8,6 +8,7 @@ import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { Reflector } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RefreshTokenService } from './refresh-token.service';
 
 @Module({
   imports: [
@@ -17,12 +18,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '60m' },
+        signOptions: { expiresIn: '15m' }, // Reducido a 15 minutos for better security
       }),
       inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, Reflector],
+  providers: [AuthService, RefreshTokenService, LocalStrategy, JwtStrategy, Reflector],
+  exports: [AuthService, RefreshTokenService],
 })
 export class AuthModule {}

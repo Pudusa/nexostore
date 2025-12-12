@@ -43,6 +43,7 @@ export interface User {
   phoneCountry?: string;
   role: Role;
   apiToken?: string;
+  refreshToken?: string;
   avatarUrl: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;

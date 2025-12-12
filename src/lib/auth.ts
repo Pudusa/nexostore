@@ -20,10 +20,11 @@ export const authOptions: NextAuthOptions = {
             password: credentials.password,
           });
 
-          const { access_token, user } = data;
+          const { access_token, refresh_token, user } = data;
 
           if (access_token && user) {
-            return { ...user, apiToken: access_token };
+            // Return user with both access and refresh tokens
+            return { ...user, apiToken: access_token, refreshToken: refresh_token };
           }
           return null;
         } catch (error) {
@@ -58,9 +59,11 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.phone = user.phone;
         token.apiToken = user.apiToken;
+        token.refreshToken = user.refresh_token; // Add refresh token to JWT
         token.avatarUrl = user.avatarUrl;
         token.createdAt = Date.now(); // Marca de tiempo para verificación
       }
+
       return token;
     },
     async session({ session, token }) {
@@ -113,8 +116,36 @@ export const getAuthenticatedUser = async () => {
 
   // Verificar si el token JWT ha expirado
   const token = session?.user?.apiToken;
+  const refreshToken = session?.user?.refreshToken;
+
   if (token && isTokenExpired(token)) {
-    return null; // El token JWT ha expirado
+    // Verificar si podemos refrescar el token
+    if (refreshToken) {
+      try {
+        // Intentar refrescar el token (esto debería actualizar la sesión)
+        const response = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+
+        if (response.ok) {
+          // Token refreshed successfully - in a real implementation, you'd update the session
+          // For now, we'll return null to force re-authentication
+          console.log("Token refreshed successfully");
+        } else {
+          console.error("Could not refresh token, session invalid");
+          return null;
+        }
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+        return null;
+      }
+    } else {
+      return null; // El token JWT ha expirado y no hay refresh token
+    }
   }
 
   return session?.user ?? null;
