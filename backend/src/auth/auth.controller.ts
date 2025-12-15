@@ -30,11 +30,4 @@ export class AuthController {
     return req.user;
   }
 
-  @Post('refresh')
-  async refresh(@Body('refresh_token') refreshToken: string) {
-    if (!refreshToken) {
-      throw new Error('Refresh token is required');
-    }
-    return this.authService.refreshTokens(refreshToken);
-  }
 }
