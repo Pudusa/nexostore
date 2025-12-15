@@ -9,21 +9,21 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String
-  email         String         @unique
-  password      String
-  role          Role           @default(client)
-  phone         String
-  avatarUrl     String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  phoneCountry  String
-  cart          Cart?
-  orders        Order[]
-  products      Product[]
-  ratings       Rating[]
-  refreshTokens RefreshToken[]
+  id                  String    @id @default(cuid())
+  name                String
+  email               String    @unique
+  password            String
+  role                Role      @default(client)
+  phone               String
+  avatarUrl           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  phoneCountry        String
+  hashedRefreshToken  String?
+  cart                Cart?
+  orders              Order[]
+  products            Product[]
+  ratings             Rating[]
 }
 
 model Product {

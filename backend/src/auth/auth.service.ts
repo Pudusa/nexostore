@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -29,10 +29,13 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const user = await this.usersService.create({
+    // Crear un objeto con la contraseña hasheada
+    const userData = {
       ...createUserDto,
       password: hashedPassword,
-    });
+    };
+
+    const user = await this.usersService.create(userData);
     return user;
   }
 
@@ -44,13 +47,16 @@ export class AuthService {
       phone: user.phone,
       phoneCountry: user.phoneCountry,
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+    // Devolver solo access token por ahora hasta que se aplique la migración
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+
     const { password, ...userWithoutPassword } = user;
 
     const { token: refreshToken, expiresAt } = await this.refreshTokenService.createRefreshToken(user.id);
 
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: accessToken,
       refresh_token: refreshToken,
       expiresAt: expiresAt,
       user: userWithoutPassword,

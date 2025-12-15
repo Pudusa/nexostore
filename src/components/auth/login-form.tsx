@@ -43,7 +43,7 @@ export default function LoginForm() {
       // Forzar una recarga completa de la página para asegurar la actualización de la sesión.
       window.location.href = callbackUrl;
     } else {
-      setError(result?.error || "Invalid credentials. Please try again.");
+      setError(result?.error || "Credenciales inválidas. Por favor inténtalo de nuevo.");
     }
     setIsSubmitting(false);
   };

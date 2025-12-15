@@ -48,12 +48,12 @@ const refreshAccessToken = async (refreshToken: string): Promise<{ access_token:
     if (response.data?.access_token) {
       // Update the client API instance with the new token
       clientAuthenticatedApi.defaults.headers.common["Authorization"] = `Bearer ${response.data.access_token}`;
-      
+
       // Store the new tokens in localStorage or session storage if needed
       if (typeof window !== 'undefined') {
         // Update any tokens stored in client-side storage as needed
       }
-      
+
       return response.data;
     }
   } catch (error) {
@@ -72,14 +72,14 @@ clientAuthenticatedApi.interceptors.response.use(
       originalRequest._retry = true;
 
       // Check if we have refresh token in localStorage
-      const storedTokens = typeof window !== 'undefined' 
-        ? JSON.parse(localStorage.getItem('authTokens') || '{}') 
+      const storedTokens = typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('authTokens') || '{}')
         : null;
 
       if (storedTokens?.refresh_token) {
         try {
           const refreshedTokens = await refreshAccessToken(storedTokens.refresh_token);
-          
+
           if (refreshedTokens) {
             // Retry the original request with the new token
             originalRequest.headers['Authorization'] = `Bearer ${refreshedTokens.access_token}`;
@@ -121,7 +121,7 @@ export const getClientAuthenticatedApi = () => {
 // Function to get token from local storage and check if it's valid
 export const getValidToken = (): { token: string; refreshToken: string } | null => {
   if (typeof window === 'undefined') return null;
-  
+
   const storedData = localStorage.getItem('authTokens');
   if (!storedData) return null;
 

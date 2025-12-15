@@ -21,5 +21,6 @@ export class CreateUserDto {
   phoneCountry: string;
 
   @IsOptional()
-  role?: Role;
+  @IsEnum(Role)
+  role?: Role = 'client'; // Valor por defecto
 }

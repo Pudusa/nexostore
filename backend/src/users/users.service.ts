@@ -21,8 +21,14 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
+    // Asegurar que el rol sea 'client' por defecto si no se proporciona
+    const userData = {
+      ...createUserDto,
+      role: createUserDto.role || 'client',
+    };
+
     const createdUser = await this.prisma.user.create({
-      data: createUserDto,
+      data: userData,
     });
 
     const { password, ...result } = createdUser;

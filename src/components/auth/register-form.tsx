@@ -69,10 +69,12 @@ export default function RegisterForm() {
 
     if (result.success) {
       // Redirigir al login después del registro exitoso
-      window.location.href = '/login';
+      window.location.href = '/login?success=1';
     } else {
       // Mostrar error
       console.error(result.message);
+      // Podríamos querer mostrar el error en el formulario
+      form.setError('root', { message: result.message });
     }
   };
 
@@ -92,6 +94,13 @@ export default function RegisterForm() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error de Registro</AlertTitle>
                 <AlertDescription>{getErrorMessage(error)}</AlertDescription>
+              </Alert>
+            )}
+            {form.formState.errors.root && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
               </Alert>
             )}
             <FormField

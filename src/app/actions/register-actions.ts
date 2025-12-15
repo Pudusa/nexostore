@@ -31,8 +31,9 @@ export async function registerAction(prevState: any, formData: FormData) {
 
     if (!validatedFields.success) {
       return {
-        errors: validatedFields.error.flatten().fieldErrors,
+        success: false,
         message: 'Campos inválidos.',
+        errors: validatedFields.error.flatten().fieldErrors,
       };
     }
 
@@ -46,14 +47,23 @@ export async function registerAction(prevState: any, formData: FormData) {
     } else {
       return {
         success: false,
-        message: 'Error en el registro. Inténtalo de nuevo.',
+        message: response.data?.message || 'Error en el registro. Inténtalo de nuevo.',
       };
     }
   } catch (error: any) {
     console.error('Registration error:', error);
+
+    // Obtener mensaje de error específico de la respuesta
+    let errorMessage = 'Error en el registro. Inténtalo de nuevo.';
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
     return {
       success: false,
-      message: error.response?.data?.message || 'Error en el registro. Inténtalo de nuevo.',
+      message: errorMessage,
     };
   }
 }
